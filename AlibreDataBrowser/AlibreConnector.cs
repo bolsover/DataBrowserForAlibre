@@ -48,38 +48,38 @@ public class AlibreConnector
      */
     public void ResetAlibreData(AlibreFileSystem rowObject)
     {
-        rowObject.AlibreDescription = "";
-            rowObject.AlibrePartNo = "";
-            rowObject.AlibreMaterial = "";
-            //rowObject.AlibreAngleDisplayUnits = "";
-            //rowObject.AlibreDensity = designProperties.Density;
-            //rowObject.AlibreLengthDisplayUnits = designProperties.LengthDisplayUnits;
-            //rowObject.AlibreMassUnits = designProperties.MassUnits;
-            //rowObject.AlibreModelUnits = designProperties.ModelUnits;
+        rowObject.AlibreDescription = null;
+            rowObject.AlibrePartNo = null;
+            rowObject.AlibreMaterial = null;
+            // rowObject.AlibreAngleDisplayUnits = "";
+            // rowObject.AlibreDensity = designProperties.Density;
+            // rowObject.AlibreLengthDisplayUnits = designProperties.LengthDisplayUnits;
+            // rowObject.AlibreMassUnits = designProperties.MassUnits;
+            // rowObject.AlibreModelUnits = designProperties.ModelUnits;
             rowObject.AlibreComment = "";
            
-            rowObject.AlibreCostCenter  = "";
-            rowObject.AlibreCreatedBy  = "";
-            rowObject.AlibreCreatedDate  = "";
-            rowObject.AlibreCreatingApplication  = "";
-            rowObject.AlibreDocumentNumber  = "";
-            rowObject.AlibreEngApprovalDate  = "";
-            rowObject.AlibreEngApprovedBy = "";
-            rowObject.AlibreEstimatedCost  = "";
-            rowObject.AlibreKeywords  = "";
-            rowObject.AlibreLastAuthor = "";
-            rowObject.AlibreLastUpdateDate = "";
-            rowObject.AlibreMfgApprovedBy = "";
-            rowObject.AlibreMfgApprovedDate = "";
-            rowObject.AlibreModified = "";
-            rowObject.AlibreProduct = "";
-            rowObject.AlibreReceivedFrom  = "";
-            rowObject.AlibreRevision  = "";
-            rowObject.AlibreStockSize = "";
-            rowObject.AlibreSupplier  = "";
-            rowObject.AlibreTitle  = "";
-            rowObject.AlibreVendor = "";
-            rowObject.AlibreWebLink  = "";
+            rowObject.AlibreCostCenter  = null;
+            rowObject.AlibreCreatedBy  = null;
+            rowObject.AlibreCreatedDate  = DateTime.MinValue;
+            rowObject.AlibreCreatingApplication  = null;
+            rowObject.AlibreDocumentNumber  = null;
+            rowObject.AlibreEngApprovalDate  = null;
+            rowObject.AlibreEngApprovedBy = null;
+            rowObject.AlibreEstimatedCost  = null;
+            rowObject.AlibreKeywords  = null;
+            rowObject.AlibreLastAuthor = null;
+            rowObject.AlibreLastUpdateDate = null;
+            rowObject.AlibreMfgApprovedBy = null;
+            rowObject.AlibreMfgApprovedDate = null;
+            rowObject.AlibreModified = null;
+            rowObject.AlibreProduct = null;
+            rowObject.AlibreReceivedFrom  = null;
+            rowObject.AlibreRevision  = null;
+            rowObject.AlibreStockSize = null;
+            rowObject.AlibreSupplier  = null;
+            rowObject.AlibreTitle  = null;
+            rowObject.AlibreVendor = null;
+            rowObject.AlibreWebLink  = null;
     }
 
     /*
@@ -93,6 +93,7 @@ public class AlibreConnector
         {
             var session = this.RetrieveSessionForFile(rowObject);
             var designProperties = session.DesignProperties;
+            //rowObject.DesignProperties = designProperties;
             rowObject.AlibreDescription = designProperties.Description;
             rowObject.AlibrePartNo = designProperties.Number;
             rowObject.AlibreMaterial = designProperties.Material;
@@ -105,17 +106,44 @@ public class AlibreConnector
            
             rowObject.AlibreCostCenter = (string) designProperties.ExtendedDesignProperty(ADExtendedDesignProperty.AD_COST_CENTER);
             rowObject.AlibreCreatedBy = (string) designProperties.ExtendedDesignProperty(ADExtendedDesignProperty.AD_CREATED_BY);
-            rowObject.AlibreCreatedDate = (string) designProperties.ExtendedDesignProperty(ADExtendedDesignProperty.AD_CREATED_DATE);
+
+            var s =  designProperties.ExtendedDesignProperty(ADExtendedDesignProperty.AD_CREATED_DATE);
+            if (s != null)
+            {
+                rowObject.AlibreCreatedDate = DateTime.Parse((string)s);
+            }
+            //rowObject.AlibreCreatedDate = DateTime.Parse((string) designProperties.ExtendedDesignProperty(ADExtendedDesignProperty.AD_CREATED_DATE));
+            
+            
             rowObject.AlibreCreatingApplication = (string) designProperties.ExtendedDesignProperty(ADExtendedDesignProperty.AD_CREATING_APPLICATION);
             rowObject.AlibreDocumentNumber = (string) designProperties.ExtendedDesignProperty(ADExtendedDesignProperty.AD_DOCUMENT_NUMBER);
-            rowObject.AlibreEngApprovalDate = (string) designProperties.ExtendedDesignProperty(ADExtendedDesignProperty.AD_ENG_APPROVAL_DATE);
+
+            s = designProperties.ExtendedDesignProperty(ADExtendedDesignProperty.AD_ENG_APPROVAL_DATE);
+            if (s != null)
+            {
+                rowObject.AlibreEngApprovalDate = DateTime.Parse((string)s);
+            }
+            
+            //rowObject.AlibreEngApprovalDate = DateTime.Parse((string) designProperties.ExtendedDesignProperty(ADExtendedDesignProperty.AD_ENG_APPROVAL_DATE));
             rowObject.AlibreEngApprovedBy = (string) designProperties.ExtendedDesignProperty(ADExtendedDesignProperty.AD_ENG_APPROVED_BY);
             rowObject.AlibreEstimatedCost = (string) designProperties.ExtendedDesignProperty(ADExtendedDesignProperty.AD_ESTIMATED_COST);
             rowObject.AlibreKeywords = (string) designProperties.ExtendedDesignProperty(ADExtendedDesignProperty.AD_KEYWORDS);
             rowObject.AlibreLastAuthor = (string) designProperties.ExtendedDesignProperty(ADExtendedDesignProperty.AD_LAST_AUTHOR);
-            rowObject.AlibreLastUpdateDate = (string) designProperties.ExtendedDesignProperty(ADExtendedDesignProperty.AD_LAST_UPDATE_DATE);
+            s = designProperties.ExtendedDesignProperty(ADExtendedDesignProperty.AD_LAST_UPDATE_DATE);
+            if (s != null)
+            {
+                rowObject.AlibreLastUpdateDate = DateTime.Parse((string)s);
+            }
+            
+            //rowObject.AlibreLastUpdateDate = DateTime.Parse((string) designProperties.ExtendedDesignProperty(ADExtendedDesignProperty.AD_LAST_UPDATE_DATE));
             rowObject.AlibreMfgApprovedBy = (string) designProperties.ExtendedDesignProperty(ADExtendedDesignProperty.AD_MFG_APPROVED_BY);
-            rowObject.AlibreMfgApprovedDate = (string) designProperties.ExtendedDesignProperty(ADExtendedDesignProperty.AD_MFG_APPROVED_DATE);
+            s = designProperties.ExtendedDesignProperty(ADExtendedDesignProperty.AD_MFG_APPROVED_DATE);
+            if (s != null)
+            {
+                rowObject.AlibreMfgApprovedDate = DateTime.Parse((string)s);
+            }
+            
+           // rowObject.AlibreMfgApprovedDate = DateTime.Parse((string) designProperties.ExtendedDesignProperty(ADExtendedDesignProperty.AD_MFG_APPROVED_DATE));
             rowObject.AlibreModified = (string) designProperties.ExtendedDesignProperty(ADExtendedDesignProperty.AD_MODIFIED);
             rowObject.AlibreProduct = (string) designProperties.ExtendedDesignProperty(ADExtendedDesignProperty.AD_PRODUCT);
             rowObject.AlibreReceivedFrom = (string) designProperties.ExtendedDesignProperty(ADExtendedDesignProperty.AD_RECEIVED_FROM);

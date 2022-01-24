@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
 
 namespace Bolsover.DataBrowser
 {
@@ -32,6 +33,7 @@ namespace Bolsover.DataBrowser
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(DataBrowserForm));
             this.treeListView = new BrightIdeasSoftware.TreeListView();
             this.olvColumnName = new BrightIdeasSoftware.OLVColumn();
             this.olvColumnType = new BrightIdeasSoftware.OLVColumn();
@@ -98,14 +100,16 @@ namespace Bolsover.DataBrowser
             this.treeListView.AllColumns.Add(this.olvColumnAlibreVendor);
             this.treeListView.AllColumns.Add(this.olvColumnAlibreWebLink);
             this.treeListView.Anchor = ((System.Windows.Forms.AnchorStyles) ((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) | System.Windows.Forms.AnchorStyles.Left) | System.Windows.Forms.AnchorStyles.Right)));
-            this.treeListView.CellEditActivation = BrightIdeasSoftware.ObjectListView.CellEditActivateMode.DoubleClick;
+            this.treeListView.CellEditActivation = BrightIdeasSoftware.ObjectListView.CellEditActivateMode.SingleClick;
             this.treeListView.CellEditUseWholeCell = false;
+            this.treeListView.CellVerticalAlignment = System.Drawing.StringAlignment.Near;
             this.treeListView.CheckBoxes = true;
             this.treeListView.CheckedAspectName = "";
             this.treeListView.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {this.olvColumnName, this.olvColumnType, this.olvColumnModified, this.olvColumnAlibreDescription, this.olvColumnAlibrePartNo, this.olvColumnAlibreMaterial, this.olvColumnAlibreComment, this.olvColumnAlibreLastUpdateDate, this.olvColumnAlibreLastAuthor, this.olvColumnAlibreKeywords, this.olvColumnAlibreEstimatedCost, this.olvColumnAlibreEngApprovedBy, this.olvColumnAlibreEngApprovalDate, this.olvColumnAlibreDocumentNumber, this.olvColumnAlibreCreatingApplication, this.olvColumnAlibreCreatedDate, this.olvColumnAlibreCreatedBy, this.olvColumnAlibreCostCenter, this.olvColumnAlibreMfgApprovedBy, this.olvColumnAlibreMfgApprovedDate, this.olvColumnAlibreModified, this.olvColumnAlibreProduct, this.olvColumnAlibreReceivedFrom, this.olvColumnAlibreRevision, this.olvColumnAlibreStockSize, this.olvColumnAlibreSupplier, this.olvColumnAlibreTitle, this.olvColumnAlibreVendor, this.olvColumnAlibreWebLink});
             this.treeListView.Cursor = System.Windows.Forms.Cursors.Default;
             this.treeListView.ForeColor = System.Drawing.SystemColors.WindowText;
             this.treeListView.HideSelection = false;
+            this.treeListView.ImeMode = System.Windows.Forms.ImeMode.NoControl;
             this.treeListView.Location = new System.Drawing.Point(12, 12);
             this.treeListView.Name = "treeListView";
             this.treeListView.ShowGroups = false;
@@ -139,9 +143,6 @@ namespace Bolsover.DataBrowser
             // 
             // olvColumnAlibreDescription
             // 
-            this.olvColumnAlibreDescription.AutoCompleteEditor = false;
-            this.olvColumnAlibreDescription.AutoCompleteEditorMode = System.Windows.Forms.AutoCompleteMode.None;
-            this.olvColumnAlibreDescription.ButtonSizing = BrightIdeasSoftware.OLVColumn.ButtonSizingMode.CellBounds;
             this.olvColumnAlibreDescription.CellEditUseWholeCell = true;
             this.olvColumnAlibreDescription.Text = "Description";
             this.olvColumnAlibreDescription.Width = 250;
@@ -168,47 +169,47 @@ namespace Bolsover.DataBrowser
             // 
             // olvColumnAlibreLastAuthor
             // 
-            this.olvColumnAlibreLastAuthor.Text = "Created By";
+            this.olvColumnAlibreLastAuthor.Text = "Last Author";
             this.olvColumnAlibreLastAuthor.Width = 100;
             // 
             // olvColumnAlibreKeywords
             // 
-            this.olvColumnAlibreKeywords.Text = "Created Date";
+            this.olvColumnAlibreKeywords.Text = "Keywords";
             this.olvColumnAlibreKeywords.Width = 100;
             // 
             // olvColumnAlibreEstimatedCost
             // 
-            this.olvColumnAlibreEstimatedCost.Text = "Document Number";
+            this.olvColumnAlibreEstimatedCost.Text = "Estimated Cost";
             this.olvColumnAlibreEstimatedCost.Width = 100;
             // 
             // olvColumnAlibreEngApprovedBy
             // 
-            this.olvColumnAlibreEngApprovedBy.Text = "Eng Approval Date";
+            this.olvColumnAlibreEngApprovedBy.Text = "Eng ApprovalBy";
             this.olvColumnAlibreEngApprovedBy.Width = 100;
             // 
             // olvColumnAlibreEngApprovalDate
             // 
-            this.olvColumnAlibreEngApprovalDate.Text = "Eng Approved By";
+            this.olvColumnAlibreEngApprovalDate.Text = "Eng Approved Date";
             this.olvColumnAlibreEngApprovalDate.Width = 100;
             // 
             // olvColumnAlibreDocumentNumber
             // 
-            this.olvColumnAlibreDocumentNumber.Text = "Keywords";
+            this.olvColumnAlibreDocumentNumber.Text = "Document Number";
             this.olvColumnAlibreDocumentNumber.Width = 100;
             // 
             // olvColumnAlibreCreatingApplication
             // 
-            this.olvColumnAlibreCreatingApplication.Text = "Eng Approved By";
+            this.olvColumnAlibreCreatingApplication.Text = "Creating Application";
             this.olvColumnAlibreCreatingApplication.Width = 100;
             // 
             // olvColumnAlibreCreatedDate
             // 
-            this.olvColumnAlibreCreatedDate.Text = "Last Author";
+            this.olvColumnAlibreCreatedDate.Text = "Created Date";
             this.olvColumnAlibreCreatedDate.Width = 100;
             // 
             // olvColumnAlibreCreatedBy
             // 
-            this.olvColumnAlibreCreatedBy.Text = "Mfg Approved Date";
+            this.olvColumnAlibreCreatedBy.Text = "Created By";
             this.olvColumnAlibreCreatedBy.Width = 100;
             // 
             // olvColumnAlibreCostCenter
@@ -289,8 +290,10 @@ namespace Bolsover.DataBrowser
             this.ClientSize = new System.Drawing.Size(916, 514);
             this.Controls.Add(this.buttonFilter);
             this.Controls.Add(this.treeListView);
+            this.Icon = ((System.Drawing.Icon) (resources.GetObject("$this.Icon")));
             this.Name = "DataBrowserForm";
             this.Text = "Three D Data Viewer";
+            
             ((System.ComponentModel.ISupportInitialize) (this.treeListView)).EndInit();
             this.ResumeLayout(false);
         }

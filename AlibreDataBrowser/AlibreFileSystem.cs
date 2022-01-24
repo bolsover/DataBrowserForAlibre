@@ -7,13 +7,13 @@ namespace Bolsover.DataBrowser;
 
 public class AlibreFileSystem : IEquatable<AlibreFileSystem>
 {
-    private string _description;
- //   private AlibreConnector alibreConnector = new();
 
     public AlibreFileSystem(FileSystemInfo info)
     {
         Info = info;
     }
+   
+
 
     public FileSystemInfo Info { get; }
     public bool IsDirectory => AsDirectory != null;
@@ -38,16 +38,16 @@ public class AlibreFileSystem : IEquatable<AlibreFileSystem>
     public string AlibreComment { get; set; }
     public string AlibreCostCenter { get; set; }
     public string AlibreCreatedBy { get; set; }
-    public string AlibreCreatedDate { get; set; }
+    public DateTime? AlibreCreatedDate { get; set; }
     public string AlibreCreatingApplication { get; set; }
     public string AlibreDocumentNumber { get; set; }
-    public string AlibreEngApprovalDate { get; set; }
+    public DateTime? AlibreEngApprovalDate { get; set; }
     public string AlibreEngApprovedBy { get; set; }
     public string AlibreEstimatedCost { get; set; }
     public string AlibreKeywords { get; set; }
     public string AlibreLastAuthor { get; set; }
-    public string AlibreLastUpdateDate { get; set; }
-    public string AlibreMfgApprovedDate { get; set; }
+    public DateTime? AlibreLastUpdateDate { get; set; }
+    public DateTime? AlibreMfgApprovedDate { get; set; }
     public string AlibreMfgApprovedBy { get; set; }
     public string AlibreModified { get; set; }
     public string AlibreProduct { get; set; }
@@ -59,7 +59,7 @@ public class AlibreFileSystem : IEquatable<AlibreFileSystem>
     public string AlibreVendor { get; set; }
     public string AlibreWebLink { get; set; }
 
-
+ 
     public bool Equals(AlibreFileSystem other)
     {
         if (ReferenceEquals(null, other)) return false;

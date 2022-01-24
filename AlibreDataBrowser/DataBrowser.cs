@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections;
-using System.Diagnostics;
 using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.IO;
 using System.Windows.Forms;
 using AlibreX;
@@ -13,25 +11,112 @@ namespace Bolsover.DataBrowser;
 public partial class DataBrowserForm : Form
 {
     private readonly AlibreConnector alibreConnector = new();
+
     public DataBrowserForm()
     {
         InitializeComponent();
-
         setupColumns();
         setupTree();
-        
+        FormClosed += (sender, args) => System.Environment.Exit(0); ;
     }
-
-   
 
     private void setupColumns()
     {
+        ConfigureAspectGetters();
+        ConfigureAspectPutters();
+       
+    }
 
+    /*
+     * Configures all the AspectPutter methods for individual columns
+     */
+    private void ConfigureAspectPutters()
+    {
+        olvColumnAlibreDescription.AspectPutter = (rowObject, value) =>
+        {
+            ((AlibreFileSystem) rowObject).AlibreDescription = (string) value;
+            var session = alibreConnector.RetrieveSessionForFile((AlibreFileSystem) rowObject);
+            var designProperties = session.DesignProperties;
+            designProperties.Description = (string) value;
+
+            try
+            {
+                session.Close(true);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        };
+
+        olvColumnAlibrePartNo.AspectPutter = (rowObject, value) =>
+        {
+            ((AlibreFileSystem) rowObject).AlibrePartNo = (string) value;
+            var session = alibreConnector.RetrieveSessionForFile((AlibreFileSystem) rowObject);
+            var designProperties = session.DesignProperties;
+            designProperties.Number = (string) value;
+
+            try
+            {
+                session.Close(true);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        };
+
+        olvColumnAlibreComment.AspectPutter = (rowObject, value) =>
+        {
+            ((AlibreFileSystem) rowObject).AlibreComment = (string) value;
+            var session = alibreConnector.RetrieveSessionForFile((AlibreFileSystem) rowObject);
+            var designProperties = session.DesignProperties;
+            designProperties.ExtendedDesignProperty(ADExtendedDesignProperty.AD_COMMENT, (string) value);
+
+            try
+            {
+                session.Close(true);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        };
+        olvColumnAlibreCreatedDate.AspectPutter = (rowObject, value) =>
+        {
+            ((AlibreFileSystem) rowObject).AlibreCreatedDate = (DateTime) value;
+            var session = alibreConnector.RetrieveSessionForFile((AlibreFileSystem) rowObject);
+
+            var designProperties = session.DesignProperties;
+            designProperties.ExtendedDesignProperty(ADExtendedDesignProperty.AD_CREATED_DATE,
+                ((DateTime) value).Date.ToShortDateString());
+
+            try
+            {
+                session.Close(true);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        };
+    }
+
+    /*
+     * Configures all the AspectGetter methods for individual columns
+     */
+    private void ConfigureAspectGetters()
+    {
         var helper = new SysImageListHelper(treeListView);
         olvColumnName.ImageGetter = rowObject => helper.GetImageIndex(((AlibreFileSystem) rowObject).FullName);
         olvColumnType.AspectGetter = rowObject => ShellUtilities.GetFileType(((AlibreFileSystem) rowObject).FullName);
         olvColumnModified.AspectGetter = rowObject => ((AlibreFileSystem) rowObject).Info.LastWriteTime;
         olvColumnAlibreDescription.AspectGetter = rowObject => ((AlibreFileSystem) rowObject).AlibreDescription;
+
         olvColumnAlibrePartNo.AspectGetter = rowObject => ((AlibreFileSystem) rowObject).AlibrePartNo;
         olvColumnAlibreMaterial.AspectGetter = rowObject => ((AlibreFileSystem) rowObject).AlibreMaterial;
         olvColumnAlibreComment.AspectGetter = rowObject => ((AlibreFileSystem) rowObject).AlibreComment;
@@ -49,7 +134,6 @@ public partial class DataBrowserForm : Form
         olvColumnAlibreLastUpdateDate.AspectGetter = rowObject => ((AlibreFileSystem) rowObject).AlibreLastUpdateDate;
         olvColumnAlibreMfgApprovedBy.AspectGetter = rowObject => ((AlibreFileSystem) rowObject).AlibreMfgApprovedBy;
         olvColumnAlibreMfgApprovedDate.AspectGetter = rowObject => ((AlibreFileSystem) rowObject).AlibreMfgApprovedDate;
-        
         olvColumnAlibreModified.AspectGetter = rowObject => ((AlibreFileSystem) rowObject).AlibreModified;
         olvColumnAlibreProduct.AspectGetter = rowObject => ((AlibreFileSystem) rowObject).AlibreProduct;
         olvColumnAlibreReceivedFrom.AspectGetter = rowObject => ((AlibreFileSystem) rowObject).AlibreReceivedFrom;
@@ -59,30 +143,6 @@ public partial class DataBrowserForm : Form
         olvColumnAlibreTitle.AspectGetter = rowObject => ((AlibreFileSystem) rowObject).AlibreTitle;
         olvColumnAlibreVendor.AspectGetter = rowObject => ((AlibreFileSystem) rowObject).AlibreVendor;
         olvColumnAlibreWebLink.AspectGetter = rowObject => ((AlibreFileSystem) rowObject).AlibreWebLink;
-        
-        olvColumnAlibreDescription.AspectPutter = (rowObject, value) =>
-        {
-            ((AlibreFileSystem) rowObject).AlibreDescription = (string) value;
-            var session = alibreConnector.RetrieveSessionForFile((AlibreFileSystem)rowObject);
-            var designProperties = session.DesignProperties;
-            
-            try
-            {
-                session.StartChanges();
-                designProperties.Description = (string)value;
-                session.StopChanges();
-                session.Save();
-                session.Close(true);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
-           
-        };
-        
-        
     }
 
     private void setupTree()
@@ -90,11 +150,8 @@ public partial class DataBrowserForm : Form
         // TreeListView require two delegates:
         // 1. CanExpandGetter - Can a particular model be expanded?
         // 2. ChildrenGetter - Once the CanExpandGetter returns true, ChildrenGetter should return the list of children
-
         // CanExpandGetter is called very often! It must be very fast.
-
         treeListView.CanExpandGetter = rowObject => ((AlibreFileSystem) rowObject).IsDirectory;
-
         treeListView.ChildrenGetter = rowObject =>
         {
             try
@@ -103,7 +160,7 @@ public partial class DataBrowserForm : Form
             }
             catch (UnauthorizedAccessException ex)
             {
-                BeginInvoke((MethodInvoker) delegate()
+                BeginInvoke((MethodInvoker) delegate
                 {
                     treeListView.Collapse(rowObject);
                     MessageBox.Show(this, ex.Message, "ObjectListViewDemo", MessageBoxButtons.OK,
@@ -118,30 +175,20 @@ public partial class DataBrowserForm : Form
             if (di.IsReady)
                 roots.Add(new AlibreFileSystem(new DirectoryInfo(di.Name)));
         treeListView.Roots = roots;
-        var treeColumnRenderer = treeListView.TreeColumnRenderer;
-        treeColumnRenderer.IsShowGlyphs = true;
-        treeColumnRenderer.UseTriangles = true;
-
-        // You can change the way the connection lines are drawn by changing the pen
-        var renderer = treeListView.TreeColumnRenderer;
-        renderer.LinePen = new Pen(Color.Firebrick, 0.5f);
-        renderer.LinePen.DashStyle = DashStyle.Dot;
         treeListView.HierarchicalCheckboxes = true;
         treeListView.BooleanCheckStateGetter = rowObject => ((AlibreFileSystem) rowObject).IsChecked;
         treeListView.BooleanCheckStatePutter = (rowObject, value) =>
         {
             ((AlibreFileSystem) rowObject).IsChecked = value;
             if (value)
-            {
                 alibreConnector.RetrieveAlibreData((AlibreFileSystem) rowObject);
-            }
             else
-            {
                 alibreConnector.ResetAlibreData((AlibreFileSystem) rowObject);
-            }
 
             return value;
         };
+        
+        treeListView.CellEditStarting += new CellEditEventHandler(this.HandleCellEditStarting);
     }
 
 
@@ -153,4 +200,21 @@ public partial class DataBrowserForm : Form
             return ((AlibreFileSystem) rowObject).Info.Extension.StartsWith(".AD_");
         });
     }
+    
+    private void HandleCellEditStarting(object sender, CellEditEventArgs e) {
+       // only checked items should be editable
+        if (!((AlibreFileSystem) e.RowObject).IsChecked)
+        {
+            e.Cancel = true;
+        }
+// fix up size of cell editor
+        Rectangle r = e.CellBounds;
+        e.Control.Bounds = r;
+        
+     
+
+    }
+
+
+ 
 }
