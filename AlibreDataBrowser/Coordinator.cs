@@ -1,21 +1,16 @@
-﻿using System;
+﻿namespace Bolsover.DataBrowser;
 
-namespace Bolsover.DataBrowser
+public class Coordinator
 {
-    public class Coordinator
+    public static string FormatFileSize(long size)
     {
-        public static string FormatFileSize(long size)
-        {
-            int[] limits = new int[] { 1024 * 1024 * 1024, 1024 * 1024, 1024 };
-            string[] units = new string[] { "GB", "MB", "KB" };
+        int[] limits = {1024 * 1024 * 1024, 1024 * 1024, 1024};
+        string[] units = {"GB", "MB", "KB"};
 
-            for (int i = 0; i < limits.Length; i++)
-            {
-                if (size >= limits[i])
-                    return String.Format("{0:#,##0.##} " + units[i], ((double)size / limits[i]));
-            }
+        for (var i = 0; i < limits.Length; i++)
+            if (size >= limits[i])
+                return string.Format("{0:#,##0.##} " + units[i], (double) size / limits[i]);
 
-            return String.Format("{0} bytes", size);
-        }
+        return string.Format("{0} bytes", size);
     }
 }

@@ -1,7 +1,5 @@
 ﻿using System;
-using System.ComponentModel;
 using AlibreX;
-
 
 namespace Bolsover.DataBrowser;
 
@@ -115,5 +113,4 @@ public class ExtendedDesignProperty : Attribute
 
 public class EnumMemberAttribute : Attribute
 {
-  
 }

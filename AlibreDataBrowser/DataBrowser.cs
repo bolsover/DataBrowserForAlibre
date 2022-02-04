@@ -10,35 +10,240 @@ namespace Bolsover.DataBrowser;
 
 public partial class DataBrowserForm : Form
 {
-    private readonly AlibreConnector alibreConnector = new();
+    private AlibreFileSystem editingRow;
 
     public DataBrowserForm()
     {
         InitializeComponent();
         setupColumns();
         setupTree();
-        FormClosed += (sender, args) => System.Environment.Exit(0); ;
+        RegisterCustomEditors();
+        FormClosed += (sender, args) => Environment.Exit(0);
     }
+
 
     private void setupColumns()
     {
         ConfigureAspectGetters();
         ConfigureAspectPutters();
-       
+    }
+
+    private void RegisterCustomEditors()
+    {
+        // Register DateTime picker
+        ObjectListView.EditorRegistry.Register(typeof(DateTime), delegate
+        {
+            var c = new DateTimePicker();
+            c.Format = DateTimePickerFormat.Short;
+            return c;
+        });
+
+        // Register MaterialPicker for use exclusively with olvColumnAlibreMaterial
+        ObjectListView.EditorRegistry.Register(typeof(string), (model, column, value) =>
+        {
+            if (column == olvColumnAlibreMaterial)
+            {
+                var mc = new MaterialPicker();
+                mc.ItemHasBeenSelected += McOnItemHasBeenSelected;
+                return mc;
+            }
+
+            return null;
+        });
+    }
+
+
+    /*
+     * Retrieves the MaterialNode selected in the MaterialPicker.
+     * Obtains the IADDesignSession and IADDesignProperties for the row being edited.
+     * Updates the IADDesignProperties.Material with the Guid from the Material.
+     * Saves the IADDesignSession.
+     * Resets the AlibreMaterial property of the row being edited with the Name of the Material.
+     */
+    private void McOnItemHasBeenSelected(object sender, MaterialPicker.SelectedItemEventArgs e)
+    {
+        try
+        {
+            var materialNode = e.SelectedChoice;
+            var designSession = AlibreConnector.RetrieveSessionForFile(editingRow);
+            var designProperties = designSession.DesignProperties;
+
+            //designProperties.ExtendedDesignProperty(ADExtendedDesignProperty.AD_MATERIAL, materialNode.Guid);
+            designProperties.Material = materialNode.Guid;
+            designSession.Close(true);
+            editingRow.AlibreMaterial = materialNode.NodeName;
+        }
+        catch (Exception exception)
+        {
+            Console.WriteLine(exception);
+            throw;
+        }
     }
 
     /*
-     * Configures all the AspectPutter methods for individual columns
+     * Configures AspectPutter methods for individual columns with the exception of Materials
      */
     private void ConfigureAspectPutters()
     {
-        olvColumnAlibreDescription.AspectPutter = (rowObject, value) =>
-        {
-            ((AlibreFileSystem) rowObject).AlibreDescription = (string) value;
-            var session = alibreConnector.RetrieveSessionForFile((AlibreFileSystem) rowObject);
-            var designProperties = session.DesignProperties;
-            designProperties.Description = (string) value;
+        ConfigreAlibreDescriptionAspectPutter();
+        ConfigreAlibrePartNoAspectPutter();
+        ConfigureAlibreModifiedAspectPutter();
+        // ConfigureAlibreMaterialAspectPutter(); // materials are handled by McOnItemHasBeenSelected method
+        ConfigureColumnAspectPutter(olvColumnAlibreComment, ADExtendedDesignProperty.AD_COMMENT, typeof(string));
+        ConfigureColumnAspectPutter(olvColumnAlibreCreatedDate, ADExtendedDesignProperty.AD_CREATED_DATE,
+            typeof(DateTime));
+        // ConfigureColumnAspectPutter(olvColumnAlibreMaterial, ADExtendedDesignProperty.AD_MATERIAL, typeof(string));
+        ConfigureColumnAspectPutter(olvColumnAlibreCostCenter, ADExtendedDesignProperty.AD_COST_CENTER, typeof(string));
+        ConfigureColumnAspectPutter(olvColumnAlibreCreatedBy, ADExtendedDesignProperty.AD_CREATED_BY, typeof(string));
+        ConfigureColumnAspectPutter(olvColumnAlibreCreatingApplication,
+            ADExtendedDesignProperty.AD_CREATING_APPLICATION, typeof(string));
+        ConfigureColumnAspectPutter(olvColumnAlibreDocumentNumber, ADExtendedDesignProperty.AD_DOCUMENT_NUMBER,
+            typeof(string));
+        ConfigureColumnAspectPutter(olvColumnAlibreEngApprovalDate, ADExtendedDesignProperty.AD_ENG_APPROVAL_DATE,
+            typeof(DateTime));
+        ConfigureColumnAspectPutter(olvColumnAlibreEngApprovedBy, ADExtendedDesignProperty.AD_ENG_APPROVED_BY,
+            typeof(string));
+        ConfigureColumnAspectPutter(olvColumnAlibreEstimatedCost, ADExtendedDesignProperty.AD_ESTIMATED_COST,
+            typeof(string));
+        ConfigureColumnAspectPutter(olvColumnAlibreKeywords, ADExtendedDesignProperty.AD_KEYWORDS, typeof(string));
+        ConfigureColumnAspectPutter(olvColumnAlibreLastAuthor, ADExtendedDesignProperty.AD_LAST_AUTHOR, typeof(string));
+        ConfigureColumnAspectPutter(olvColumnAlibreLastUpdateDate, ADExtendedDesignProperty.AD_LAST_UPDATE_DATE,
+            typeof(DateTime));
+        ConfigureColumnAspectPutter(olvColumnAlibreMfgApprovedBy, ADExtendedDesignProperty.AD_MFG_APPROVED_BY,
+            typeof(string));
+        ConfigureColumnAspectPutter(olvColumnAlibreMfgApprovedDate, ADExtendedDesignProperty.AD_MFG_APPROVED_DATE,
+            typeof(DateTime));
+        ConfigureColumnAspectPutter(olvColumnAlibreProduct, ADExtendedDesignProperty.AD_PRODUCT, typeof(string));
+        ConfigureColumnAspectPutter(olvColumnAlibreReceivedFrom, ADExtendedDesignProperty.AD_RECEIVED_FROM,
+            typeof(string));
+        ConfigureColumnAspectPutter(olvColumnAlibreRevision, ADExtendedDesignProperty.AD_REVISION, typeof(string));
+        ConfigureColumnAspectPutter(olvColumnAlibreStockSize, ADExtendedDesignProperty.AD_STOCK_SIZE, typeof(string));
+        ConfigureColumnAspectPutter(olvColumnAlibreSupplier, ADExtendedDesignProperty.AD_SUPPLIER, typeof(string));
+        ConfigureColumnAspectPutter(olvColumnAlibreTitle, ADExtendedDesignProperty.AD_TITLE, typeof(string));
+        ConfigureColumnAspectPutter(olvColumnAlibreVendor, ADExtendedDesignProperty.AD_VENDOR, typeof(string));
+        ConfigureColumnAspectPutter(olvColumnAlibreWebLink, ADExtendedDesignProperty.AD_WEBLINK, typeof(string));
+    }
 
+    /*
+     * Helper method to cast object Types
+     */
+    public static dynamic Cast(dynamic obj, Type castTo)
+    {
+        return Convert.ChangeType(obj, castTo);
+    }
+
+    /*
+     * Configures AspectPutters based on the column, extendedDesignProperty and Type
+     * OLVColumn column: The column to be configured
+     * ADExtendedDesignProperty extendedDesignProperty: the property against which a value is put.
+     * Type type: The Type of property being put.
+     */
+    private void ConfigureColumnAspectPutter(OLVColumn column, ADExtendedDesignProperty extendedDesignProperty,
+        Type type)
+    {
+        column.AspectPutter = (rowObject, value) =>
+        {
+            var session = AlibreConnector.RetrieveSessionForFile((AlibreFileSystem) rowObject);
+            var designProperties = session.DesignProperties;
+            switch (extendedDesignProperty)
+            {
+                case ADExtendedDesignProperty.AD_WEBLINK:
+                    ((AlibreFileSystem) rowObject).AlibreWebLink = Cast(value, type);
+                    break;
+                case ADExtendedDesignProperty.AD_VENDOR:
+                    ((AlibreFileSystem) rowObject).AlibreVendor = Cast(value, type);
+                    break;
+                case ADExtendedDesignProperty.AD_MFG_APPROVED_DATE:
+                    ((AlibreFileSystem) rowObject).AlibreMfgApprovedDate = Cast(value, type);
+                    break;
+                case ADExtendedDesignProperty.AD_COMMENT:
+                    ((AlibreFileSystem) rowObject).AlibreComment = Cast(value, type);
+                    break;
+                case ADExtendedDesignProperty.AD_CREATED_DATE:
+                    ((AlibreFileSystem) rowObject).AlibreCreatedDate = Cast(value, type);
+                    break;
+
+                case ADExtendedDesignProperty.AD_MATERIAL:
+                    ((AlibreFileSystem) rowObject).AlibreExtMaterial = Cast(value, type);
+                    break;
+                case ADExtendedDesignProperty.AD_COST_CENTER:
+                    ((AlibreFileSystem) rowObject).AlibreCostCenter = Cast(value, type);
+                    break;
+                case ADExtendedDesignProperty.AD_CREATED_BY:
+                    ((AlibreFileSystem) rowObject).AlibreCreatedBy = Cast(value, type);
+                    break;
+                case ADExtendedDesignProperty.AD_CREATING_APPLICATION:
+                    ((AlibreFileSystem) rowObject).AlibreCreatingApplication = Cast(value, type);
+                    break;
+                case ADExtendedDesignProperty.AD_DOCUMENT_NUMBER:
+                    ((AlibreFileSystem) rowObject).AlibreDocumentNumber = Cast(value, type);
+                    break;
+                case ADExtendedDesignProperty.AD_ENG_APPROVAL_DATE:
+                    ((AlibreFileSystem) rowObject).AlibreEngApprovalDate = Cast(value, type);
+                    break;
+                case ADExtendedDesignProperty.AD_ENG_APPROVED_BY:
+                    ((AlibreFileSystem) rowObject).AlibreEngApprovedBy = Cast(value, type);
+                    break;
+                case ADExtendedDesignProperty.AD_ESTIMATED_COST:
+                    ((AlibreFileSystem) rowObject).AlibreEstimatedCost = Cast(value, type);
+                    break;
+                case ADExtendedDesignProperty.AD_KEYWORDS:
+                    ((AlibreFileSystem) rowObject).AlibreKeywords = Cast(value, type);
+                    break;
+                case ADExtendedDesignProperty.AD_LAST_AUTHOR:
+                    ((AlibreFileSystem) rowObject).AlibreLastAuthor = Cast(value, type);
+                    break;
+                case ADExtendedDesignProperty.AD_MFG_APPROVED_BY:
+                    ((AlibreFileSystem) rowObject).AlibreMfgApprovedBy = Cast(value, type);
+                    break;
+                case ADExtendedDesignProperty.AD_PRODUCT:
+                    ((AlibreFileSystem) rowObject).AlibreProduct = Cast(value, type);
+                    break;
+                case ADExtendedDesignProperty.AD_RECEIVED_FROM:
+                    ((AlibreFileSystem) rowObject).AlibreReceivedFrom = Cast(value, type);
+                    break;
+                case ADExtendedDesignProperty.AD_REVISION:
+                    ((AlibreFileSystem) rowObject).AlibreRevision = Cast(value, type);
+                    break;
+                case ADExtendedDesignProperty.AD_STOCK_SIZE:
+                    ((AlibreFileSystem) rowObject).AlibreStockSize = Cast(value, type);
+                    break;
+                case ADExtendedDesignProperty.AD_SUPPLIER:
+                    ((AlibreFileSystem) rowObject).AlibreSupplier = Cast(value, type);
+                    break;
+                case ADExtendedDesignProperty.AD_TITLE:
+                    ((AlibreFileSystem) rowObject).AlibreTitle = Cast(value, type);
+                    break;
+                case ADExtendedDesignProperty.AD_LAST_UPDATE_DATE:
+                    ((AlibreFileSystem) rowObject).AlibreLastUpdateDate = Cast(value, type);
+                    break;
+            }
+
+            if (type == typeof(DateTime))
+            {
+                value = ((DateTime) value).Date.ToShortDateString();
+                designProperties.ExtendedDesignProperty(extendedDesignProperty, value);
+            }
+            else
+            {
+                designProperties.ExtendedDesignProperty(extendedDesignProperty, Cast(value, type));
+            }
+
+            session.Close(true);
+        };
+    }
+
+
+    private void ConfigureAlibreModifiedAspectPutter()
+    {
+        olvColumnAlibreModified.AspectPutter = (rowObject, value) =>
+        {
+            ((AlibreFileSystem) rowObject).AlibreModified = (DateTime) value;
+            var session = AlibreConnector.RetrieveSessionForFile((AlibreFileSystem) rowObject);
+
+            var designProperties = session.DesignProperties;
+            designProperties.ExtendedDesignProperty(ADExtendedDesignProperty.AD_MODIFIED,
+                ((DateTime) value).Date.ToShortDateString());
             try
             {
                 session.Close(true);
@@ -49,11 +254,15 @@ public partial class DataBrowserForm : Form
                 throw;
             }
         };
+    }
 
+
+    private void ConfigreAlibrePartNoAspectPutter()
+    {
         olvColumnAlibrePartNo.AspectPutter = (rowObject, value) =>
         {
             ((AlibreFileSystem) rowObject).AlibrePartNo = (string) value;
-            var session = alibreConnector.RetrieveSessionForFile((AlibreFileSystem) rowObject);
+            var session = AlibreConnector.RetrieveSessionForFile((AlibreFileSystem) rowObject);
             var designProperties = session.DesignProperties;
             designProperties.Number = (string) value;
 
@@ -67,32 +276,17 @@ public partial class DataBrowserForm : Form
                 throw;
             }
         };
+    }
 
-        olvColumnAlibreComment.AspectPutter = (rowObject, value) =>
+
+    private void ConfigreAlibreDescriptionAspectPutter()
+    {
+        olvColumnAlibreDescription.AspectPutter = (rowObject, value) =>
         {
-            ((AlibreFileSystem) rowObject).AlibreComment = (string) value;
-            var session = alibreConnector.RetrieveSessionForFile((AlibreFileSystem) rowObject);
+            ((AlibreFileSystem) rowObject).AlibreDescription = (string) value;
+            var session = AlibreConnector.RetrieveSessionForFile((AlibreFileSystem) rowObject);
             var designProperties = session.DesignProperties;
-            designProperties.ExtendedDesignProperty(ADExtendedDesignProperty.AD_COMMENT, (string) value);
-
-            try
-            {
-                session.Close(true);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
-        };
-        olvColumnAlibreCreatedDate.AspectPutter = (rowObject, value) =>
-        {
-            ((AlibreFileSystem) rowObject).AlibreCreatedDate = (DateTime) value;
-            var session = alibreConnector.RetrieveSessionForFile((AlibreFileSystem) rowObject);
-
-            var designProperties = session.DesignProperties;
-            designProperties.ExtendedDesignProperty(ADExtendedDesignProperty.AD_CREATED_DATE,
-                ((DateTime) value).Date.ToShortDateString());
+            designProperties.Description = (string) value;
 
             try
             {
@@ -119,6 +313,7 @@ public partial class DataBrowserForm : Form
 
         olvColumnAlibrePartNo.AspectGetter = rowObject => ((AlibreFileSystem) rowObject).AlibrePartNo;
         olvColumnAlibreMaterial.AspectGetter = rowObject => ((AlibreFileSystem) rowObject).AlibreMaterial;
+        //  olvColumnAlibreExtMaterial.AspectGetter = rowObject => ((AlibreFileSystem) rowObject).AlibreExtMaterial;
         olvColumnAlibreComment.AspectGetter = rowObject => ((AlibreFileSystem) rowObject).AlibreComment;
         olvColumnAlibreCostCenter.AspectGetter = rowObject => ((AlibreFileSystem) rowObject).AlibreCostCenter;
         olvColumnAlibreCreatedBy.AspectGetter = rowObject => ((AlibreFileSystem) rowObject).AlibreCreatedBy;
@@ -151,6 +346,7 @@ public partial class DataBrowserForm : Form
         // 1. CanExpandGetter - Can a particular model be expanded?
         // 2. ChildrenGetter - Once the CanExpandGetter returns true, ChildrenGetter should return the list of children
         // CanExpandGetter is called very often! It must be very fast.
+        // treeListView.CanExpandGetter = rowObject => (((AlibreFileSystem) rowObject).IsDirectory | ((AlibreFileSystem) rowObject).FullName.EndsWith("AD_ASM")) ;
         treeListView.CanExpandGetter = rowObject => ((AlibreFileSystem) rowObject).IsDirectory;
         treeListView.ChildrenGetter = rowObject =>
         {
@@ -160,12 +356,7 @@ public partial class DataBrowserForm : Form
             }
             catch (UnauthorizedAccessException ex)
             {
-                BeginInvoke((MethodInvoker) delegate
-                {
-                    treeListView.Collapse(rowObject);
-                    MessageBox.Show(this, ex.Message, "ObjectListViewDemo", MessageBoxButtons.OK,
-                        MessageBoxIcon.Exclamation);
-                });
+                BeginInvoke((MethodInvoker) delegate { treeListView.Collapse(rowObject); });
                 return new ArrayList();
             }
         };
@@ -181,40 +372,124 @@ public partial class DataBrowserForm : Form
         {
             ((AlibreFileSystem) rowObject).IsChecked = value;
             if (value)
-                alibreConnector.RetrieveAlibreData((AlibreFileSystem) rowObject);
+                AlibreConnector.RetrieveAlibreData((AlibreFileSystem) rowObject);
             else
-                alibreConnector.ResetAlibreData((AlibreFileSystem) rowObject);
-
+                AlibreConnector.ResetAlibreData((AlibreFileSystem) rowObject);
             return value;
         };
-        
-        treeListView.CellEditStarting += new CellEditEventHandler(this.HandleCellEditStarting);
+
+        // add handler for CellEditStarting
+        treeListView.CellEditStarting += HandleCellEditStarting;
     }
 
 
-    private void buttonFilter_Click(object sender, EventArgs e)
+    /*
+     * Handle CellEditStarting
+     * Set editingRow field to correspond to the row being edited.
+     * Cancel edit and return if the row is a directory.
+     * Cancel edit and return if the row is not checked.
+     * Cancel edit and return if row is not a Part, Assembly or Sheet Metal design
+     * Fix up the cell edit control bounds - special attention to MaterialPicker
+     * Cancel edit and return if row is locked - probably open in Alibre
+     */
+    private void HandleCellEditStarting(object sender, CellEditEventArgs e)
     {
-        treeListView.ModelFilter = new ModelFilter(rowObject =>
-        {
-            if (((AlibreFileSystem) rowObject).IsDirectory) return true;
-            return ((AlibreFileSystem) rowObject).Info.Extension.StartsWith(".AD_");
-        });
-    }
-    
-    private void HandleCellEditStarting(object sender, CellEditEventArgs e) {
-       // only checked items should be editable
-        if (!((AlibreFileSystem) e.RowObject).IsChecked)
+        var rowObject = (AlibreFileSystem) e.RowObject;
+        editingRow = rowObject;
+
+        // directory items are not editable
+        if (rowObject.IsDirectory)
         {
             e.Cancel = true;
+            return;
         }
-// fix up size of cell editor
-        Rectangle r = e.CellBounds;
-        e.Control.Bounds = r;
-        
-     
 
+        // only checked items should be editable
+        if (!rowObject.IsChecked)
+        {
+            e.Cancel = true;
+            return;
+        }
+
+        // prevent edits to anything other than sheet metal, part and assembly types
+        var extension = rowObject.Info.Extension.ToUpper();
+        if (!(rowObject.Info.Extension.StartsWith(".AD_P") | rowObject.Info.Extension.StartsWith(".AD_A") |
+              rowObject.Info.Extension.StartsWith(".AD_S")))
+        {
+            e.Cancel = true;
+            return;
+        }
+
+        // olvColumnAlibreMaterial uses MaterialPicker other string based columns use default editor
+        if (e.Column != olvColumnAlibreMaterial)
+        {
+            // fix up size of cell editor
+            e.Control.Bounds = e.CellBounds;
+        }
+        else
+        {
+            if (!(rowObject.Info.Extension.StartsWith(".AD_P") | rowObject.Info.Extension.StartsWith(".AD_S")))
+            {
+                e.Cancel = true;
+                return;
+            }
+
+            e.Control.Bounds = new Rectangle(e.CellBounds.X, e.CellBounds.Y, 250, 300);
+        }
+
+        // prevent editing locked files
+        if (IsFileLocked(rowObject.AsFile))
+        {
+            e.Cancel = true;
+            var message = "File Locked - Probably Open in Alibre.";
+            var title = "File Locked";
+            MessageBox.Show(message, title);
+        }
+
+        Console.WriteLine(sender);
+    }
+
+    /*
+     * Utility to check if file is locked elsewhere
+     */
+    protected virtual bool IsFileLocked(FileInfo file)
+    {
+        try
+        {
+            using (var stream = file.Open(FileMode.Open, FileAccess.Read, FileShare.None))
+            {
+                stream.Close();
+            }
+        }
+        catch (IOException)
+        {
+            //the file is unavailable because it is:
+            //still being written to
+            //or being processed by another thread
+            //or does not exist (has already been processed)
+            return true;
+        }
+
+        //file is not locked
+        return false;
     }
 
 
- 
+    private void checkBoxFilter_CheckedChanged(object sender, EventArgs e)
+    {
+        if (checkBoxFilter.Checked)
+            treeListView.ModelFilter = new ModelFilter(rowObject =>
+            {
+                if (((AlibreFileSystem) rowObject).IsDirectory) return true;
+                return ((AlibreFileSystem) rowObject).Info.Extension.StartsWith(".AD_");
+            });
+        else
+            treeListView.ModelFilter = new ModelFilter(rowObject => { return true; });
+    }
+
+    private void checkBoxCopy_CheckedChanged(object sender, EventArgs e)
+    {
+        MessageBox.Show("Not Implemented Yet", "Not Implemented");
+        //throw new NotImplementedException();
+    }
 }

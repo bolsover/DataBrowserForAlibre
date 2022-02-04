@@ -1,5 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Drawing;
+using BrightIdeasSoftware;
 
 namespace Bolsover.DataBrowser
 {
@@ -64,7 +66,8 @@ namespace Bolsover.DataBrowser
             this.olvColumnAlibreTitle = new BrightIdeasSoftware.OLVColumn();
             this.olvColumnAlibreVendor = new BrightIdeasSoftware.OLVColumn();
             this.olvColumnAlibreWebLink = new BrightIdeasSoftware.OLVColumn();
-            this.buttonFilter = new System.Windows.Forms.Button();
+            this.checkBoxFilter = new System.Windows.Forms.CheckBox();
+            this.checkBoxCopy = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize) (this.treeListView)).BeginInit();
             this.SuspendLayout();
             // 
@@ -99,8 +102,9 @@ namespace Bolsover.DataBrowser
             this.treeListView.AllColumns.Add(this.olvColumnAlibreTitle);
             this.treeListView.AllColumns.Add(this.olvColumnAlibreVendor);
             this.treeListView.AllColumns.Add(this.olvColumnAlibreWebLink);
+            this.treeListView.AlternateRowBackColor = System.Drawing.Color.FromArgb(((int) (((byte) (255)))), ((int) (((byte) (255)))), ((int) (((byte) (192)))));
             this.treeListView.Anchor = ((System.Windows.Forms.AnchorStyles) ((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) | System.Windows.Forms.AnchorStyles.Left) | System.Windows.Forms.AnchorStyles.Right)));
-            this.treeListView.CellEditActivation = BrightIdeasSoftware.ObjectListView.CellEditActivateMode.SingleClick;
+            this.treeListView.CellEditActivation = BrightIdeasSoftware.ObjectListView.CellEditActivateMode.DoubleClick;
             this.treeListView.CellEditUseWholeCell = false;
             this.treeListView.CellVerticalAlignment = System.Drawing.StringAlignment.Near;
             this.treeListView.CheckBoxes = true;
@@ -108,6 +112,7 @@ namespace Bolsover.DataBrowser
             this.treeListView.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {this.olvColumnName, this.olvColumnType, this.olvColumnModified, this.olvColumnAlibreDescription, this.olvColumnAlibrePartNo, this.olvColumnAlibreMaterial, this.olvColumnAlibreComment, this.olvColumnAlibreLastUpdateDate, this.olvColumnAlibreLastAuthor, this.olvColumnAlibreKeywords, this.olvColumnAlibreEstimatedCost, this.olvColumnAlibreEngApprovedBy, this.olvColumnAlibreEngApprovalDate, this.olvColumnAlibreDocumentNumber, this.olvColumnAlibreCreatingApplication, this.olvColumnAlibreCreatedDate, this.olvColumnAlibreCreatedBy, this.olvColumnAlibreCostCenter, this.olvColumnAlibreMfgApprovedBy, this.olvColumnAlibreMfgApprovedDate, this.olvColumnAlibreModified, this.olvColumnAlibreProduct, this.olvColumnAlibreReceivedFrom, this.olvColumnAlibreRevision, this.olvColumnAlibreStockSize, this.olvColumnAlibreSupplier, this.olvColumnAlibreTitle, this.olvColumnAlibreVendor, this.olvColumnAlibreWebLink});
             this.treeListView.Cursor = System.Windows.Forms.Cursors.Default;
             this.treeListView.ForeColor = System.Drawing.SystemColors.WindowText;
+            this.treeListView.GridLines = true;
             this.treeListView.HideSelection = false;
             this.treeListView.ImeMode = System.Windows.Forms.ImeMode.NoControl;
             this.treeListView.Location = new System.Drawing.Point(12, 12);
@@ -118,6 +123,7 @@ namespace Bolsover.DataBrowser
             this.treeListView.TabIndex = 0;
             this.treeListView.UseCompatibleStateImageBehavior = false;
             this.treeListView.UseFiltering = true;
+            this.treeListView.UseHotItem = true;
             this.treeListView.View = System.Windows.Forms.View.Details;
             this.treeListView.VirtualMode = true;
             // 
@@ -154,6 +160,7 @@ namespace Bolsover.DataBrowser
             // 
             // olvColumnAlibreMaterial
             // 
+            this.olvColumnAlibreMaterial.ButtonMaxWidth = 20;
             this.olvColumnAlibreMaterial.Text = "Material";
             this.olvColumnAlibreMaterial.Width = 100;
             // 
@@ -272,33 +279,48 @@ namespace Bolsover.DataBrowser
             this.olvColumnAlibreWebLink.Text = "Web Link";
             this.olvColumnAlibreWebLink.Width = 100;
             // 
-            // buttonFilter
+            // checkBoxFilter
             // 
-            this.buttonFilter.Anchor = ((System.Windows.Forms.AnchorStyles) ((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonFilter.Location = new System.Drawing.Point(765, 479);
-            this.buttonFilter.Name = "buttonFilter";
-            this.buttonFilter.Size = new System.Drawing.Size(137, 23);
-            this.buttonFilter.TabIndex = 2;
-            this.buttonFilter.Text = "Filter for Alibre Designs\r\n";
-            this.buttonFilter.UseVisualStyleBackColor = true;
-            this.buttonFilter.Click += new System.EventHandler(this.buttonFilter_Click);
+            this.checkBoxFilter.Anchor = ((System.Windows.Forms.AnchorStyles) ((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.checkBoxFilter.Location = new System.Drawing.Point(750, 482);
+            this.checkBoxFilter.Name = "checkBoxFilter";
+            this.checkBoxFilter.Size = new System.Drawing.Size(154, 20);
+            this.checkBoxFilter.TabIndex = 4;
+            this.checkBoxFilter.Text = "Filter For Alibre Designs";
+            this.checkBoxFilter.UseVisualStyleBackColor = true;
+            this.checkBoxFilter.CheckedChanged += new System.EventHandler(this.checkBoxFilter_CheckedChanged);
+            // 
+            // checkBoxCopy
+            // 
+            this.checkBoxCopy.Anchor = ((System.Windows.Forms.AnchorStyles) ((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.checkBoxCopy.FlatAppearance.CheckedBackColor = System.Drawing.Color.Red;
+            this.checkBoxCopy.Location = new System.Drawing.Point(568, 483);
+            this.checkBoxCopy.Name = "checkBoxCopy";
+            this.checkBoxCopy.Size = new System.Drawing.Size(152, 22);
+            this.checkBoxCopy.TabIndex = 5;
+            this.checkBoxCopy.Text = "Copy to All Selected";
+            this.checkBoxCopy.UseVisualStyleBackColor = true;
+            this.checkBoxCopy.CheckedChanged += new System.EventHandler(this.checkBoxCopy_CheckedChanged);
             // 
             // DataBrowserForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(916, 514);
-            this.Controls.Add(this.buttonFilter);
+            this.Controls.Add(this.checkBoxCopy);
+            this.Controls.Add(this.checkBoxFilter);
             this.Controls.Add(this.treeListView);
             this.Icon = ((System.Drawing.Icon) (resources.GetObject("$this.Icon")));
             this.Name = "DataBrowserForm";
-            this.Text = "Three D Data Viewer";
-            
+            this.Text = "Data Browser";
             ((System.ComponentModel.ISupportInitialize) (this.treeListView)).EndInit();
             this.ResumeLayout(false);
         }
-        
-        
+
+        private System.Windows.Forms.CheckBox checkBoxCopy;
+
+        private System.Windows.Forms.CheckBox checkBoxFilter;
+
         private BrightIdeasSoftware.OLVColumn olvColumnAlibreModified;
         private BrightIdeasSoftware.OLVColumn olvColumnAlibreProduct;
         private BrightIdeasSoftware.OLVColumn olvColumnAlibreReceivedFrom;
@@ -308,12 +330,6 @@ namespace Bolsover.DataBrowser
         private BrightIdeasSoftware.OLVColumn olvColumnAlibreTitle;
         private BrightIdeasSoftware.OLVColumn olvColumnAlibreVendor;
         private BrightIdeasSoftware.OLVColumn olvColumnAlibreWebLink;
-
-        
-        
-        
-        
-        
         private BrightIdeasSoftware.OLVColumn olvColumnAlibreMfgApprovedDate;
         private BrightIdeasSoftware.OLVColumn olvColumnAlibreMfgApprovedBy;
         private BrightIdeasSoftware.OLVColumn olvColumnAlibreLastUpdateDate;
@@ -331,12 +347,14 @@ namespace Bolsover.DataBrowser
         private BrightIdeasSoftware.OLVColumn olvColumnAlibreMaterial;
         private BrightIdeasSoftware.OLVColumn olvColumnAlibrePartNo;
         private BrightIdeasSoftware.OLVColumn olvColumnAlibreDescription;
-        private System.Windows.Forms.Button buttonFilter;
         private BrightIdeasSoftware.OLVColumn olvColumnModified;
         private BrightIdeasSoftware.OLVColumn olvColumnType;
         private BrightIdeasSoftware.OLVColumn olvColumnName;
         private BrightIdeasSoftware.TreeListView treeListView;
 
         #endregion
+
+        
+        
     }
 }

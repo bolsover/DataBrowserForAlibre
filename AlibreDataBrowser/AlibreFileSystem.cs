@@ -7,12 +7,10 @@ namespace Bolsover.DataBrowser;
 
 public class AlibreFileSystem : IEquatable<AlibreFileSystem>
 {
-
     public AlibreFileSystem(FileSystemInfo info)
     {
         Info = info;
     }
-   
 
 
     public FileSystemInfo Info { get; }
@@ -26,7 +24,7 @@ public class AlibreFileSystem : IEquatable<AlibreFileSystem>
     public bool Exists { get; }
     public bool IsChecked { get; set; }
 
-    public string AlibreDescription{ get; set; }
+    public string AlibreDescription { get; set; }
 
     public ADUnits AlibreAngleDisplayUnits { get; set; }
     public double AlibreDensity { get; set; }
@@ -35,6 +33,7 @@ public class AlibreFileSystem : IEquatable<AlibreFileSystem>
     public ADUnits AlibreModelUnits { get; set; }
     public string AlibrePartNo { get; set; }
     public string AlibreMaterial { get; set; }
+    public string AlibreExtMaterial { get; set; }
     public string AlibreComment { get; set; }
     public string AlibreCostCenter { get; set; }
     public string AlibreCreatedBy { get; set; }
@@ -49,7 +48,7 @@ public class AlibreFileSystem : IEquatable<AlibreFileSystem>
     public DateTime? AlibreLastUpdateDate { get; set; }
     public DateTime? AlibreMfgApprovedDate { get; set; }
     public string AlibreMfgApprovedBy { get; set; }
-    public string AlibreModified { get; set; }
+    public DateTime? AlibreModified { get; set; }
     public string AlibreProduct { get; set; }
     public string AlibreReceivedFrom { get; set; }
     public string AlibreStockSize { get; set; }
@@ -59,7 +58,7 @@ public class AlibreFileSystem : IEquatable<AlibreFileSystem>
     public string AlibreVendor { get; set; }
     public string AlibreWebLink { get; set; }
 
- 
+
     public bool Equals(AlibreFileSystem other)
     {
         if (ReferenceEquals(null, other)) return false;
