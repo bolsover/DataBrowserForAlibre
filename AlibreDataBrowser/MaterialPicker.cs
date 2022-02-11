@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Reflection;
 using System.Windows.Forms;
 using AlibreX;
@@ -7,11 +9,15 @@ using BrightIdeasSoftware;
 
 namespace Bolsover.DataBrowser;
 
+[DefaultProperty("Value")]
+[DefaultEvent("ValueChanged")]
+[DefaultBindingProperty("Value")]
 public partial class MaterialPicker : UserControl
 {
     private int index = 0;
     private MaterialNode Root;
-    private MaterialNode selectedMaterialNode;
+    private string originalValue = null;
+    private MaterialNode value = null;
 
     public MaterialPicker()
     {
@@ -21,7 +27,29 @@ public partial class MaterialPicker : UserControl
         setupTree();
         // actually uses cellEditStarting to detect when an item has been selected
         treeListView1.CellEditStarting += HandleCellEditStarting;
+        //  treeListView1.CellClick += HandleCellClicked;
     }
+
+    public MaterialPicker(string value)
+    {
+        Console.WriteLine(value);
+        originalValue = value;
+        InitializeComponent();
+        Root = PrepareMaterialsTree();
+        setupColumns();
+        setupTree();
+        // actually uses cellEditStarting to detect when an item has been selected
+        treeListView1.CellEditStarting += HandleCellEditStarting;
+        //treeListView1.CellClick += HandleCellClicked;
+    }
+
+
+    public MaterialNode Value()
+    {
+        return value;
+    }
+
+    public event EventHandler<SelectedItemEventArgs> CellClickedEventHandler;
 
     /*
      * Event handler used when a material item has been selected
@@ -30,14 +58,31 @@ public partial class MaterialPicker : UserControl
 
     private void HandleCellEditStarting(object sender, CellEditEventArgs e)
     {
-        selectedMaterialNode = (MaterialNode) e.RowObject;
+        value = (MaterialNode) e.RowObject;
         // Pass onto ItemHasBeenSelected handler
         var handler = ItemHasBeenSelected;
         if (handler != null)
             handler(this, new SelectedItemEventArgs
-                {SelectedChoice = selectedMaterialNode});
+                {SelectedChoice = value});
         // dispose the MaterialPicker
         Dispose();
+    }
+
+    private void HandleCellClicked(object sender, CellClickEventArgs e)
+    {
+        if (e.ClickCount == 2)
+        {
+            var olvListItem = e.Item;
+            if (olvListItem.RowObject is not null)
+            {
+                value = (MaterialNode) olvListItem.RowObject;
+                var handler = CellClickedEventHandler;
+                if (handler != null)
+                    handler(this, new SelectedItemEventArgs
+                        {SelectedChoice = value});
+                Dispose();
+            }
+        }
     }
 
 

@@ -13,6 +13,8 @@ internal static class Program
     {
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
+        // force initialisation of connector here to prevent later problems
+        new AlibreConnector();
         Application.Run(new DataBrowserForm());
     }
 }

@@ -5,8 +5,8 @@
         <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
         <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
         <ProjectGuid>{9049B0BD-6D8A-4886-870C-B66EA05B7223}</ProjectGuid>
-        <OutputType>WinExe</OutputType>
-        <RootNamespace>AlibreTests2</RootNamespace>
+        <OutputType>Exe</OutputType>
+        <RootNamespace>Bolsover.DataBrowser</RootNamespace>
         <AssemblyName>DataBrowser</AssemblyName>
         <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
         <FileAlignment>512</FileAlignment>
@@ -78,7 +78,6 @@
         <Reference Include="System.Xml" />
     </ItemGroup>
     <ItemGroup>
-        <Compile Include="Accessor.cs" />
         <Compile Include="AlibreFileSystem.cs" />
         <Compile Include="AlibreConnector.cs" />
         <Compile Include="Coordinator.cs" />
@@ -102,7 +101,14 @@
         <Compile Include="MaterialsBrowser.Designer.cs">
             <DependentUpon>MaterialsBrowser.cs</DependentUpon>
         </Compile>
+        <Compile Include="PartNoConfiguration.cs">
+            <SubType>UserControl</SubType>
+        </Compile>
+        <Compile Include="PartNoConfiguration.Designer.cs">
+            <DependentUpon>PartNoConfiguration.cs</DependentUpon>
+        </Compile>
         <Compile Include="Program.cs" />
+        <Compile Include="Properties\Annotations.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />
         <Compile Include="ShellUtilities.cs" />
         <EmbeddedResource Include="DataBrowser.resx">
@@ -113,6 +119,9 @@
         </EmbeddedResource>
         <EmbeddedResource Include="MaterialsBrowser.resx">
             <DependentUpon>MaterialsBrowser.cs</DependentUpon>
+        </EmbeddedResource>
+        <EmbeddedResource Include="PartNoConfiguration.resx">
+            <DependentUpon>PartNoConfiguration.cs</DependentUpon>
         </EmbeddedResource>
         <EmbeddedResource Include="Properties\Resources.resx">
             <Generator>ResXFileCodeGenerator</Generator>

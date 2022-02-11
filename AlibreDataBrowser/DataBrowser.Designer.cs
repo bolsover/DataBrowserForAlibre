@@ -68,6 +68,9 @@ namespace Bolsover.DataBrowser
             this.olvColumnAlibreWebLink = new BrightIdeasSoftware.OLVColumn();
             this.checkBoxFilter = new System.Windows.Forms.CheckBox();
             this.checkBoxCopy = new System.Windows.Forms.CheckBox();
+            this.progressLabel = new System.Windows.Forms.Label();
+            this.buttonSaveState = new System.Windows.Forms.Button();
+            this.buttonRestoreState = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize) (this.treeListView)).BeginInit();
             this.SuspendLayout();
             // 
@@ -102,6 +105,7 @@ namespace Bolsover.DataBrowser
             this.treeListView.AllColumns.Add(this.olvColumnAlibreTitle);
             this.treeListView.AllColumns.Add(this.olvColumnAlibreVendor);
             this.treeListView.AllColumns.Add(this.olvColumnAlibreWebLink);
+            this.treeListView.AllowColumnReorder = true;
             this.treeListView.AlternateRowBackColor = System.Drawing.Color.FromArgb(((int) (((byte) (255)))), ((int) (((byte) (255)))), ((int) (((byte) (192)))));
             this.treeListView.Anchor = ((System.Windows.Forms.AnchorStyles) ((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) | System.Windows.Forms.AnchorStyles.Left) | System.Windows.Forms.AnchorStyles.Right)));
             this.treeListView.CellEditActivation = BrightIdeasSoftware.ObjectListView.CellEditActivateMode.DoubleClick;
@@ -114,14 +118,17 @@ namespace Bolsover.DataBrowser
             this.treeListView.ForeColor = System.Drawing.SystemColors.WindowText;
             this.treeListView.GridLines = true;
             this.treeListView.HideSelection = false;
+            this.treeListView.HierarchicalCheckboxes = true;
             this.treeListView.ImeMode = System.Windows.Forms.ImeMode.NoControl;
             this.treeListView.Location = new System.Drawing.Point(12, 12);
             this.treeListView.Name = "treeListView";
             this.treeListView.ShowGroups = false;
             this.treeListView.ShowImagesOnSubItems = true;
-            this.treeListView.Size = new System.Drawing.Size(890, 461);
+            this.treeListView.Size = new System.Drawing.Size(890, 477);
             this.treeListView.TabIndex = 0;
+            this.treeListView.TintSortColumn = true;
             this.treeListView.UseCompatibleStateImageBehavior = false;
+            this.treeListView.UseFilterIndicator = true;
             this.treeListView.UseFiltering = true;
             this.treeListView.UseHotItem = true;
             this.treeListView.View = System.Windows.Forms.View.Details;
@@ -282,7 +289,7 @@ namespace Bolsover.DataBrowser
             // checkBoxFilter
             // 
             this.checkBoxFilter.Anchor = ((System.Windows.Forms.AnchorStyles) ((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.checkBoxFilter.Location = new System.Drawing.Point(750, 482);
+            this.checkBoxFilter.Location = new System.Drawing.Point(750, 498);
             this.checkBoxFilter.Name = "checkBoxFilter";
             this.checkBoxFilter.Size = new System.Drawing.Size(154, 20);
             this.checkBoxFilter.TabIndex = 4;
@@ -294,7 +301,7 @@ namespace Bolsover.DataBrowser
             // 
             this.checkBoxCopy.Anchor = ((System.Windows.Forms.AnchorStyles) ((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.checkBoxCopy.FlatAppearance.CheckedBackColor = System.Drawing.Color.Red;
-            this.checkBoxCopy.Location = new System.Drawing.Point(568, 483);
+            this.checkBoxCopy.Location = new System.Drawing.Point(568, 499);
             this.checkBoxCopy.Name = "checkBoxCopy";
             this.checkBoxCopy.Size = new System.Drawing.Size(152, 22);
             this.checkBoxCopy.TabIndex = 5;
@@ -302,11 +309,45 @@ namespace Bolsover.DataBrowser
             this.checkBoxCopy.UseVisualStyleBackColor = true;
             this.checkBoxCopy.CheckedChanged += new System.EventHandler(this.checkBoxCopy_CheckedChanged);
             // 
+            // progressLabel
+            // 
+            this.progressLabel.Anchor = ((System.Windows.Forms.AnchorStyles) ((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.progressLabel.Location = new System.Drawing.Point(12, 498);
+            this.progressLabel.Name = "progressLabel";
+            this.progressLabel.Size = new System.Drawing.Size(286, 20);
+            this.progressLabel.TabIndex = 6;
+            this.progressLabel.Text = "Progress";
+            // 
+            // buttonSaveState
+            // 
+            this.buttonSaveState.Anchor = ((System.Windows.Forms.AnchorStyles) ((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.buttonSaveState.Location = new System.Drawing.Point(397, 496);
+            this.buttonSaveState.Name = "buttonSaveState";
+            this.buttonSaveState.Size = new System.Drawing.Size(75, 23);
+            this.buttonSaveState.TabIndex = 7;
+            this.buttonSaveState.Text = "Save State";
+            this.buttonSaveState.UseVisualStyleBackColor = true;
+            this.buttonSaveState.Click += new System.EventHandler(this.buttonSaveState_Click);
+            // 
+            // buttonRestoreState
+            // 
+            this.buttonRestoreState.Anchor = ((System.Windows.Forms.AnchorStyles) ((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.buttonRestoreState.Location = new System.Drawing.Point(478, 496);
+            this.buttonRestoreState.Name = "buttonRestoreState";
+            this.buttonRestoreState.Size = new System.Drawing.Size(75, 23);
+            this.buttonRestoreState.TabIndex = 8;
+            this.buttonRestoreState.Text = "Restore State";
+            this.buttonRestoreState.UseVisualStyleBackColor = true;
+            this.buttonRestoreState.Click += new System.EventHandler(this.buttonRestoreState_Click);
+            // 
             // DataBrowserForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(916, 514);
+            this.ClientSize = new System.Drawing.Size(916, 530);
+            this.Controls.Add(this.buttonRestoreState);
+            this.Controls.Add(this.buttonSaveState);
+            this.Controls.Add(this.progressLabel);
             this.Controls.Add(this.checkBoxCopy);
             this.Controls.Add(this.checkBoxFilter);
             this.Controls.Add(this.treeListView);
@@ -316,6 +357,12 @@ namespace Bolsover.DataBrowser
             ((System.ComponentModel.ISupportInitialize) (this.treeListView)).EndInit();
             this.ResumeLayout(false);
         }
+
+        private System.Windows.Forms.Button buttonSaveState;
+        private System.Windows.Forms.Button buttonRestoreState;
+
+
+        private System.Windows.Forms.Label progressLabel;
 
         private System.Windows.Forms.CheckBox checkBoxCopy;
 

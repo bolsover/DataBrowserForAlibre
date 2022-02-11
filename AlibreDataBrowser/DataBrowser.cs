@@ -1,7 +1,11 @@
 ﻿using System;
 using System.Collections;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using AlibreX;
 using BrightIdeasSoftware;
@@ -11,6 +15,21 @@ namespace Bolsover.DataBrowser;
 public partial class DataBrowserForm : Form
 {
     private AlibreFileSystem editingRow;
+    private bool IsCopyToAllSelected = false;
+    private MaterialNode _selectedMaterialNode;
+
+    private ToolTip copySelectedTooltip = new();
+    private ToolTip filterTooltip = new();
+    private ToolTip saveStateTooltip = new();
+    private ToolTip restoreStateTooltip = new();
+    private byte[] treeListViewViewState;
+
+
+    public MaterialNode selectedMaterialNode
+    {
+        get => _selectedMaterialNode;
+        set => _selectedMaterialNode = value;
+    }
 
     public DataBrowserForm()
     {
@@ -18,7 +37,20 @@ public partial class DataBrowserForm : Form
         setupColumns();
         setupTree();
         RegisterCustomEditors();
-        FormClosed += (sender, args) => Environment.Exit(0);
+        copySelectedTooltip.SetToolTip(checkBoxCopy,
+            "When selected, values entered in one field will be copied to all applicable fields in same column.");
+        filterTooltip.SetToolTip(checkBoxFilter,
+            "When selected, the tree is filtered to show only Alibre files.");
+        saveStateTooltip.SetToolTip(buttonSaveState,
+            "Saves column layout to file.");
+        restoreStateTooltip.SetToolTip(buttonRestoreState,
+            "Restores column layout from file.");
+        restoreState();
+        FormClosed += (sender, args) =>
+        {
+            AlibreConnector.TerminateAll();
+            Environment.Exit(0);
+        };
     }
 
 
@@ -43,8 +75,9 @@ public partial class DataBrowserForm : Form
         {
             if (column == olvColumnAlibreMaterial)
             {
-                var mc = new MaterialPicker();
+                var mc = new MaterialPicker(value.ToString());
                 mc.ItemHasBeenSelected += McOnItemHasBeenSelected;
+
                 return mc;
             }
 
@@ -65,19 +98,40 @@ public partial class DataBrowserForm : Form
         try
         {
             var materialNode = e.SelectedChoice;
-            var designSession = AlibreConnector.RetrieveSessionForFile(editingRow);
-            var designProperties = designSession.DesignProperties;
-
-            //designProperties.ExtendedDesignProperty(ADExtendedDesignProperty.AD_MATERIAL, materialNode.Guid);
-            designProperties.Material = materialNode.Guid;
-            designSession.Close(true);
-            editingRow.AlibreMaterial = materialNode.NodeName;
+            olvColumnAlibreMaterial.AspectPutter.Invoke(editingRow, materialNode);
         }
         catch (Exception exception)
         {
             Console.WriteLine(exception);
             throw;
         }
+    }
+
+
+    private void ConfigureAlibreMaterialAspectPutter()
+    {
+        olvColumnAlibreMaterial.AspectPutter = (editingRow, value) =>
+        {
+            if (value.GetType() == typeof(MaterialNode))
+            {
+                Console.WriteLine(value);
+                var designSession = AlibreConnector.RetrieveSessionForFile((AlibreFileSystem) editingRow);
+                var designProperties = designSession.DesignProperties;
+                designProperties.Material = ((MaterialNode) value).Guid;
+                ((AlibreFileSystem) editingRow).AlibreMaterialGuid = ((MaterialNode) value).Guid;
+
+                try
+                {
+                    designSession.Close(true);
+                    ((AlibreFileSystem) editingRow).AlibreMaterial = ((MaterialNode) value).NodeName;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
+            }
+        };
     }
 
     /*
@@ -88,7 +142,7 @@ public partial class DataBrowserForm : Form
         ConfigreAlibreDescriptionAspectPutter();
         ConfigreAlibrePartNoAspectPutter();
         ConfigureAlibreModifiedAspectPutter();
-        // ConfigureAlibreMaterialAspectPutter(); // materials are handled by McOnItemHasBeenSelected method
+        ConfigureAlibreMaterialAspectPutter();
         ConfigureColumnAspectPutter(olvColumnAlibreComment, ADExtendedDesignProperty.AD_COMMENT, typeof(string));
         ConfigureColumnAspectPutter(olvColumnAlibreCreatedDate, ADExtendedDesignProperty.AD_CREATED_DATE,
             typeof(DateTime));
@@ -352,7 +406,10 @@ public partial class DataBrowserForm : Form
         {
             try
             {
-                return ((AlibreFileSystem) rowObject).GetFileSystemInfos();
+                var children = ((AlibreFileSystem) rowObject).GetFileSystemInfos();
+                foreach (var child in children)
+                    ((AlibreFileSystem) child).PropertyChanged += HandleAlibreFileSystemPropertyChangedEvent;
+                return children;
             }
             catch (UnauthorizedAccessException ex)
             {
@@ -364,24 +421,80 @@ public partial class DataBrowserForm : Form
         var roots = new ArrayList();
         foreach (var di in DriveInfo.GetDrives())
             if (di.IsReady)
-                roots.Add(new AlibreFileSystem(new DirectoryInfo(di.Name)));
+            {
+                var alFileSystem = new AlibreFileSystem(new DirectoryInfo(di.Name));
+                alFileSystem.PropertyChanged += HandleAlibreFileSystemPropertyChangedEvent;
+                roots.Add(alFileSystem);
+            }
+
         treeListView.Roots = roots;
-        treeListView.HierarchicalCheckboxes = true;
-        treeListView.BooleanCheckStateGetter = rowObject => ((AlibreFileSystem) rowObject).IsChecked;
-        treeListView.BooleanCheckStatePutter = (rowObject, value) =>
-        {
-            ((AlibreFileSystem) rowObject).IsChecked = value;
-            if (value)
-                AlibreConnector.RetrieveAlibreData((AlibreFileSystem) rowObject);
-            else
-                AlibreConnector.ResetAlibreData((AlibreFileSystem) rowObject);
-            return value;
-        };
+        treeListView.CheckedAspectName = "IsChecked";
 
         // add handler for CellEditStarting
         treeListView.CellEditStarting += HandleCellEditStarting;
+        treeListView.CellEditFinished += HandleCellEditFinished;
     }
 
+    /*
+     * Handle AlibreFileSystem checked events
+     */
+    public void HandleAlibreFileSystemPropertyChangedEvent(object sender, PropertyChangedEventArgs args)
+    {
+        Debug.WriteLine(args.PropertyName);
+        if (args.PropertyName == "IsChecked" && ((AlibreFileSystem) sender).IsChecked)
+            try
+            {
+                var task = new Task(PrepareAction((AlibreFileSystem) sender), TaskCreationOptions.LongRunning);
+                var continuationTask = task.ContinueWith((antecedent) =>
+                {
+                    if (counter > 25)
+                    {
+                        treeListView.Refresh();
+
+                        lock (lockTarget)
+                        {
+                            counter = 0;
+                        }
+                    }
+                });
+
+                task.RunSynchronously(TaskScheduler.Current);
+                continuationTask.Wait();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+            }
+        else
+            ((AlibreFileSystem) sender).Reset();
+    }
+
+    private object lockTarget = new();
+    private int counter = 0;
+
+
+    private Action PrepareAction(AlibreFileSystem sender)
+    {
+        var action = () =>
+        {
+            progressLabel.Text = "Updating " + sender.Name;
+            sender.RetrieveAlibreData();
+            progressLabel.Text = "Completed ";
+            lock (lockTarget)
+            {
+                counter++;
+            }
+        };
+        return action;
+    }
+
+
+    private void HandleCellEditFinished(object sender, CellEditEventArgs e)
+    {
+        var rowObject = (AlibreFileSystem) e.RowObject;
+        var newvalue = e.NewValue;
+        if (IsCopyToAllSelected) CopyToSelected(sender, e);
+    }
 
     /*
      * Handle CellEditStarting
@@ -446,7 +559,51 @@ public partial class DataBrowserForm : Form
             MessageBox.Show(message, title);
         }
 
-        Console.WriteLine(sender);
+        Debug.WriteLine(sender);
+    }
+
+    private void CopyToSelected(object sender, CellEditEventArgs e)
+    {
+        UseWaitCursor = true;
+        var copyAction = CopySelected;
+        var task = new Task(() => copyAction(e, treeListView.CheckedObjects));
+        task.Start();
+    }
+
+    private void CopySelected(CellEditEventArgs e, IList checkedObjects)
+    {
+        foreach (var checkedObject in checkedObjects)
+        {
+            var rowObject = (AlibreFileSystem) checkedObject;
+            if (e.Column == olvColumnAlibreMaterial && rowObject.Info.Extension.StartsWith(".AD_P") |
+                rowObject.Info.Extension.StartsWith(".AD_S"))
+            {
+                var afs = (AlibreFileSystem) e.RowObject;
+                var materialNode = new MaterialNode(afs.AlibreMaterial);
+                materialNode.Guid = afs.AlibreMaterialGuid;
+
+                progressLabel.Text = "Copy to " + rowObject.Name;
+                e.Column.AspectPutter.Invoke(rowObject, materialNode);
+
+                treeListView.Refresh();
+            }
+
+
+            else
+            {
+                if (rowObject.Info.Extension.StartsWith(".AD_P") | rowObject.Info.Extension.StartsWith(".AD_A") |
+                    rowObject.Info.Extension.StartsWith(".AD_S"))
+                {
+                    progressLabel.Text = "Copy to " + rowObject.Name;
+                    e.Column.AspectPutter.Invoke(rowObject, e.NewValue);
+
+                    treeListView.Refresh();
+                }
+            }
+        }
+
+        progressLabel.Text = "Copy complete ";
+        UseWaitCursor = false;
     }
 
     /*
@@ -489,7 +646,41 @@ public partial class DataBrowserForm : Form
 
     private void checkBoxCopy_CheckedChanged(object sender, EventArgs e)
     {
-        MessageBox.Show("Not Implemented Yet", "Not Implemented");
-        //throw new NotImplementedException();
+        //  MessageBox.Show("Not Implemented Yet", "Not Implemented");
+        IsCopyToAllSelected = ((CheckBox) sender).Checked;
+    }
+
+    private  void buttonSaveState_Click(object sender, EventArgs e)
+    {
+        this.treeListViewViewState = this.treeListView.SaveState();
+        Console.WriteLine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData));
+        string directorypath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\DataBrowser";
+        string filepath = directorypath+"\\databrowser.ste";
+        DirectoryInfo	directoryInfo = new DirectoryInfo(directorypath);
+        if (!directoryInfo.Exists)
+        {Directory.CreateDirectory(directorypath);}
+      
+        File.WriteAllBytes(filepath, treeListViewViewState);
+    }
+
+    private void buttonRestoreState_Click(object sender, EventArgs e)
+    {
+        restoreState();
+
+    }
+
+    private void restoreState()
+    {
+        string directorypath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\DataBrowser";
+        DirectoryInfo	directoryInfo = new DirectoryInfo(directorypath);
+        if (!directoryInfo.Exists)
+        {Directory.CreateDirectory(directorypath);}
+        string filepath = directorypath+"\\databrowser.ste";
+        FileInfo fileInfo = new FileInfo(filepath);
+        if (fileInfo.Exists)
+        {
+            this.treeListViewViewState = File.ReadAllBytes(filepath);
+            this.treeListView.RestoreState(this.treeListViewViewState);
+        } 
     }
 }

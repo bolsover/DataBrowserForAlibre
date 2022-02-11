@@ -8,8 +8,6 @@ namespace Bolsover.DataBrowser;
 
 public partial class MaterialsBrowser : Form
 {
-    // private readonly Hashtable libraryHashtable = new();
-
     private MaterialNode Root;
 
     public MaterialsBrowser()

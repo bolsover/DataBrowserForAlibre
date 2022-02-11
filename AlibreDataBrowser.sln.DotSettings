@@ -1,2 +1,2 @@
 ﻿<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
-	<s:String x:Key="/Default/DesignerComponentManagerNuGet/DesignerToolboxNuGetState/@EntryValue">D:\Repository\Jetbrains\Bolsover\DataBrowser\packages\ObjectListView.Official.2.9.1\lib\net20\ObjectListView.dll|</s:String></wpf:ResourceDictionary>
+	<s:Boolean x:Key="/Default/CodeInspection/CodeAnnotations/NamespacesWithAnnotations/=AlibreTests2_002EAnnotations/@EntryIndexedValue">True</s:Boolean></wpf:ResourceDictionary>
