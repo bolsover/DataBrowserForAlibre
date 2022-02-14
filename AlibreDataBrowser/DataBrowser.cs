@@ -46,6 +46,7 @@ public partial class DataBrowserForm : Form
         partNoConfig.MouseMove += partNoConfigMouseMove;
         partNoConfig.Location = new Point(50, 50);
         Controls.Add(partNoConfig);
+        partNoConfig.Hide();
     }
 
     /*
