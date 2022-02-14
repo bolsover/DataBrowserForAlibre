@@ -14,6 +14,15 @@ Selection of parts and assemblies is a simple matter of checking the relevant it
 Once items have been selected, the Alibre files are read and data is shown in the browser.
 Currently, only Alibre Part and Assemblies are available for editing.
 
+# Columns
+There are so many Alibre design extended properties it is quite likely users don't use them all. By right clicking the table header, you can select which columns to display by default. Once you are happy with the display, click the 'Save State' button and the arrangement will be saved to file (%AppData%/DataBrowser/table.settings)
+
+# Part numbering
+The Part # column is available for editing in the same way as other text based columns. Alternatively you can use the Part numbering feature to automatically re-number all selected Part and Assembly files. 
+
+# Copy to all selected
+When checked, edits in one column/field are copied to all other selected parts and assemblies.
+
 # Materials
 Material changes can only be applied to Part files.
 When selecting a part for a material edit, the popup material selector does not currently select the exiting material from the dialog.
