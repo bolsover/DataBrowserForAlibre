@@ -1,4 +1,4 @@
-# AlibreDataBrowser
+# DataBrowserForAlibre
 
 A C# project designed to allow users to browse Alibre data files and display Design Properties.
 
