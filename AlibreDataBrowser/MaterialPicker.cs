@@ -14,7 +14,6 @@ namespace Bolsover.DataBrowser;
 [DefaultBindingProperty("Value")]
 public partial class MaterialPicker : UserControl
 {
-    private int index = 0;
     private MaterialNode Root;
     private string originalValue = null;
     private MaterialNode value = null;

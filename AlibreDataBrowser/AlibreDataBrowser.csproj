@@ -101,11 +101,11 @@
         <Compile Include="MaterialsBrowser.Designer.cs">
             <DependentUpon>MaterialsBrowser.cs</DependentUpon>
         </Compile>
-        <Compile Include="PartNoConfiguration.cs">
+        <Compile Include="PartNoConfig.cs">
             <SubType>UserControl</SubType>
         </Compile>
-        <Compile Include="PartNoConfiguration.Designer.cs">
-            <DependentUpon>PartNoConfiguration.cs</DependentUpon>
+        <Compile Include="PartNoConfig.Designer.cs">
+            <DependentUpon>PartNoConfig.cs</DependentUpon>
         </Compile>
         <Compile Include="Program.cs" />
         <Compile Include="Properties\Annotations.cs" />
@@ -120,8 +120,8 @@
         <EmbeddedResource Include="MaterialsBrowser.resx">
             <DependentUpon>MaterialsBrowser.cs</DependentUpon>
         </EmbeddedResource>
-        <EmbeddedResource Include="PartNoConfiguration.resx">
-            <DependentUpon>PartNoConfiguration.cs</DependentUpon>
+        <EmbeddedResource Include="PartNoConfig.resx">
+            <DependentUpon>PartNoConfig.cs</DependentUpon>
         </EmbeddedResource>
         <EmbeddedResource Include="Properties\Resources.resx">
             <Generator>ResXFileCodeGenerator</Generator>

@@ -26,6 +26,9 @@ public class MaterialNode
         ChList.Add(childNode);
     }
 
+    /*
+     * Removes MaterialNode childNode from the ChList.
+     */
     public void RemoveChild(MaterialNode childNode)
     {
         var j = -1;

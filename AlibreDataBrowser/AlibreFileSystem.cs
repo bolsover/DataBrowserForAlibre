@@ -13,7 +13,7 @@ namespace Bolsover.DataBrowser;
 public class AlibreFileSystem : IEquatable<AlibreFileSystem>, INotifyPropertyChanged
 {
     private bool _isChecked;
-    private TreeListView _treeListView;
+   
 
     public AlibreFileSystem(FileSystemInfo info)
     {

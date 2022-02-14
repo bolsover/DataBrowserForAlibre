@@ -4,7 +4,6 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using AlibreX;
@@ -15,21 +14,15 @@ namespace Bolsover.DataBrowser;
 public partial class DataBrowserForm : Form
 {
     private AlibreFileSystem editingRow;
-    private bool IsCopyToAllSelected = false;
-    private MaterialNode _selectedMaterialNode;
-
-    private ToolTip copySelectedTooltip = new();
-    private ToolTip filterTooltip = new();
-    private ToolTip saveStateTooltip = new();
-    private ToolTip restoreStateTooltip = new();
+    private bool IsCopyToAllSelected;
+    private readonly ToolTip copySelectedTooltip = new();
+    private readonly ToolTip filterTooltip = new();
+    private readonly ToolTip saveStateTooltip = new();
+    private readonly ToolTip restoreStateTooltip = new();
+    private readonly ToolTip partNoTooltip = new();
     private byte[] treeListViewViewState;
+    private readonly PartNoConfig partNoConfig = new();
 
-
-    public MaterialNode selectedMaterialNode
-    {
-        get => _selectedMaterialNode;
-        set => _selectedMaterialNode = value;
-    }
 
     public DataBrowserForm()
     {
@@ -37,6 +30,29 @@ public partial class DataBrowserForm : Form
         setupColumns();
         setupTree();
         RegisterCustomEditors();
+        SetupToolTips();
+        restoreState();
+        InitPartNoConfig();
+        FormClosed += (sender, args) =>
+        {
+            AlibreConnector.TerminateAll();
+            Environment.Exit(0);
+        };
+    }
+
+    private void InitPartNoConfig()
+    {
+        partNoConfig.MouseDown += partNoConfigMouseDown;
+        partNoConfig.MouseMove += partNoConfigMouseMove;
+        partNoConfig.Location = new Point(50, 50);
+        Controls.Add(partNoConfig);
+    }
+
+    /*
+     * Setup ToolTips
+     */
+    private void SetupToolTips()
+    {
         copySelectedTooltip.SetToolTip(checkBoxCopy,
             "When selected, values entered in one field will be copied to all applicable fields in same column.");
         filterTooltip.SetToolTip(checkBoxFilter,
@@ -45,21 +61,24 @@ public partial class DataBrowserForm : Form
             "Saves column layout to file.");
         restoreStateTooltip.SetToolTip(buttonRestoreState,
             "Restores column layout from file.");
-        restoreState();
-        FormClosed += (sender, args) =>
-        {
-            AlibreConnector.TerminateAll();
-            Environment.Exit(0);
-        };
+       partNoTooltip.SetToolTip(this.buttonPartNo,
+            "Opens the Part Numbering control.");
     }
 
 
+    /*
+     * Set up column AspectPutters and AspectGetters
+     */
     private void setupColumns()
     {
         ConfigureAspectGetters();
         ConfigureAspectPutters();
     }
 
+    /*
+     * Register custom editors for DateTime columns and the Material column.
+     * All other columns use string types
+     */
     private void RegisterCustomEditors()
     {
         // Register DateTime picker
@@ -77,7 +96,6 @@ public partial class DataBrowserForm : Form
             {
                 var mc = new MaterialPicker(value.ToString());
                 mc.ItemHasBeenSelected += McOnItemHasBeenSelected;
-
                 return mc;
             }
 
@@ -108,6 +126,13 @@ public partial class DataBrowserForm : Form
     }
 
 
+    /*
+     * Configures the MaterialAspectPutter.
+     * This is a special case because the designProperty for Material is actually populated with the IADMaterial Material
+     * GUID value. This value is never shown by Alibre which always shows the corresponding name of the Material.
+     * This method therefore saves the designProperty for Material GUID and closes the design session updating the Alibre
+     * file with the selected material. The editing row is then updated with the actual material name but this is not saved.
+     */
     private void ConfigureAlibreMaterialAspectPutter()
     {
         olvColumnAlibreMaterial.AspectPutter = (editingRow, value) =>
@@ -135,7 +160,10 @@ public partial class DataBrowserForm : Form
     }
 
     /*
-     * Configures AspectPutter methods for individual columns with the exception of Materials
+     * Configures AspectPutter methods for individual columns with the exception of extended deign property for Materials
+     * The extended deign property for material is overwritten whenever the user selects a Material design property.
+     * Alibre would flag a warning if the user attempted update of the Material design property if this would overwrite
+     * the extended deign property.
      */
     private void ConfigureAspectPutters()
     {
@@ -288,6 +316,10 @@ public partial class DataBrowserForm : Form
     }
 
 
+    /*
+     * Configures the AspectPutter for the Modified column.
+     * 
+     */
     private void ConfigureAlibreModifiedAspectPutter()
     {
         olvColumnAlibreModified.AspectPutter = (rowObject, value) =>
@@ -311,6 +343,9 @@ public partial class DataBrowserForm : Form
     }
 
 
+    /*
+     * Configures the AspectPutter for the Part No column
+     */
     private void ConfigreAlibrePartNoAspectPutter()
     {
         olvColumnAlibrePartNo.AspectPutter = (rowObject, value) =>
@@ -333,6 +368,9 @@ public partial class DataBrowserForm : Form
     }
 
 
+    /*
+     * Configures the AspectPutter for the Description column
+     */
     private void ConfigreAlibreDescriptionAspectPutter()
     {
         olvColumnAlibreDescription.AspectPutter = (rowObject, value) =>
@@ -450,7 +488,6 @@ public partial class DataBrowserForm : Form
                     if (counter > 25)
                     {
                         treeListView.Refresh();
-
                         lock (lockTarget)
                         {
                             counter = 0;
@@ -473,6 +510,9 @@ public partial class DataBrowserForm : Form
     private int counter = 0;
 
 
+    /*
+     * Returns the Action used to update the AlibreDate for a row.
+     */
     private Action PrepareAction(AlibreFileSystem sender)
     {
         var action = () =>
@@ -489,6 +529,9 @@ public partial class DataBrowserForm : Form
     }
 
 
+    /*
+     * Cell edit finished is used as a trigger to check if the cell contents should be copied to other cells in same column
+     */
     private void HandleCellEditFinished(object sender, CellEditEventArgs e)
     {
         var rowObject = (AlibreFileSystem) e.RowObject;
@@ -562,6 +605,11 @@ public partial class DataBrowserForm : Form
         Debug.WriteLine(sender);
     }
 
+
+    /*
+     * Method to copy info from one cell to other cells in the same column where the row is checked.
+     * 
+     */
     private void CopyToSelected(object sender, CellEditEventArgs e)
     {
         UseWaitCursor = true;
@@ -570,6 +618,11 @@ public partial class DataBrowserForm : Form
         task.Start();
     }
 
+    /*
+     * Method used by CopyAction.
+     * Iterates through all the checked records and invokes the appropriate OLVColumn AspectPutter.
+     * Note that updates to Material are treated as a special case.
+     */
     private void CopySelected(CellEditEventArgs e, IList checkedObjects)
     {
         foreach (var checkedObject in checkedObjects)
@@ -581,10 +634,8 @@ public partial class DataBrowserForm : Form
                 var afs = (AlibreFileSystem) e.RowObject;
                 var materialNode = new MaterialNode(afs.AlibreMaterial);
                 materialNode.Guid = afs.AlibreMaterialGuid;
-
                 progressLabel.Text = "Copy to " + rowObject.Name;
                 e.Column.AspectPutter.Invoke(rowObject, materialNode);
-
                 treeListView.Refresh();
             }
 
@@ -596,7 +647,6 @@ public partial class DataBrowserForm : Form
                 {
                     progressLabel.Text = "Copy to " + rowObject.Name;
                     e.Column.AspectPutter.Invoke(rowObject, e.NewValue);
-
                     treeListView.Refresh();
                 }
             }
@@ -607,7 +657,7 @@ public partial class DataBrowserForm : Form
     }
 
     /*
-     * Utility to check if file is locked elsewhere
+     * Utility to check if file is locked or open elsewhere
      */
     protected virtual bool IsFileLocked(FileInfo file)
     {
@@ -631,7 +681,9 @@ public partial class DataBrowserForm : Form
         return false;
     }
 
-
+/*
+ * Filters the table for files with extension starting with .AD_
+ */
     private void checkBoxFilter_CheckedChanged(object sender, EventArgs e)
     {
         if (checkBoxFilter.Checked)
@@ -644,43 +696,77 @@ public partial class DataBrowserForm : Form
             treeListView.ModelFilter = new ModelFilter(rowObject => { return true; });
     }
 
+    /*
+     * Sets the value of IsCopyToAllSelected bool.
+     */
     private void checkBoxCopy_CheckedChanged(object sender, EventArgs e)
     {
-        //  MessageBox.Show("Not Implemented Yet", "Not Implemented");
         IsCopyToAllSelected = ((CheckBox) sender).Checked;
     }
 
-    private  void buttonSaveState_Click(object sender, EventArgs e)
+    /*
+    * Saves the layout of table columns to file.
+     * File is %AppData%\DataBrowser\table.settings
+    */
+    private void buttonSaveState_Click(object sender, EventArgs e)
     {
-        this.treeListViewViewState = this.treeListView.SaveState();
-        Console.WriteLine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData));
-        string directorypath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\DataBrowser";
-        string filepath = directorypath+"\\databrowser.ste";
-        DirectoryInfo	directoryInfo = new DirectoryInfo(directorypath);
-        if (!directoryInfo.Exists)
-        {Directory.CreateDirectory(directorypath);}
-      
+        treeListViewViewState = treeListView.SaveState();
+        var directorypath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\DataBrowser";
+        var filepath = directorypath + "\\table.settings";
+        var directoryInfo = new DirectoryInfo(directorypath);
+        if (!directoryInfo.Exists) Directory.CreateDirectory(directorypath);
+
         File.WriteAllBytes(filepath, treeListViewViewState);
     }
 
     private void buttonRestoreState_Click(object sender, EventArgs e)
     {
         restoreState();
-
     }
 
+    /*
+     * Restores the layout of table columns from those previously saved to file.
+     * File is %AppData%\DataBrowser\table.settings
+     */
     private void restoreState()
     {
-        string directorypath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\DataBrowser";
-        DirectoryInfo	directoryInfo = new DirectoryInfo(directorypath);
-        if (!directoryInfo.Exists)
-        {Directory.CreateDirectory(directorypath);}
-        string filepath = directorypath+"\\databrowser.ste";
-        FileInfo fileInfo = new FileInfo(filepath);
+        var directoryPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\DataBrowser";
+        var directoryInfo = new DirectoryInfo(directoryPath);
+        if (!directoryInfo.Exists) Directory.CreateDirectory(directoryPath);
+        var filepath = directoryPath + "\\table.settings";
+        var fileInfo = new FileInfo(filepath);
         if (fileInfo.Exists)
         {
-            this.treeListViewViewState = File.ReadAllBytes(filepath);
-            this.treeListView.RestoreState(this.treeListViewViewState);
-        } 
+            treeListViewViewState = File.ReadAllBytes(filepath);
+            treeListView.RestoreState(treeListViewViewState);
+        }
+    }
+
+    private void buttonPartNo_Click(object sender, EventArgs e)
+    {
+        // PartNoConfiguration partNoConfiguration = new PartNoConfiguration(treeListView.CheckedObjects);
+        // partNoConfiguration.Show();
+
+        partNoConfig.SelectedItems = treeListView.CheckedObjects;
+        partNoConfig.Show();
+        
+        partNoConfig.BringToFront();
+    }
+
+    private Point MouseDownLocation;
+
+
+    private void partNoConfigMouseDown(object sender, MouseEventArgs e)
+    {
+        if (e.Button == MouseButtons.Left) MouseDownLocation = e.Location;
+    }
+
+    private void partNoConfigMouseMove(object sender, MouseEventArgs e)
+    {
+        if (e.Button == MouseButtons.Left)
+        {
+            partNoConfig.Left = e.X + partNoConfig.Left - MouseDownLocation.X;
+            partNoConfig.Top = e.Y + partNoConfig.Top - MouseDownLocation.Y;
+        }
     }
 }

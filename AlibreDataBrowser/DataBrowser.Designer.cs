@@ -71,6 +71,7 @@ namespace Bolsover.DataBrowser
             this.progressLabel = new System.Windows.Forms.Label();
             this.buttonSaveState = new System.Windows.Forms.Button();
             this.buttonRestoreState = new System.Windows.Forms.Button();
+            this.buttonPartNo = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize) (this.treeListView)).BeginInit();
             this.SuspendLayout();
             // 
@@ -340,11 +341,23 @@ namespace Bolsover.DataBrowser
             this.buttonRestoreState.UseVisualStyleBackColor = true;
             this.buttonRestoreState.Click += new System.EventHandler(this.buttonRestoreState_Click);
             // 
+            // buttonPartNo
+            // 
+            this.buttonPartNo.Anchor = ((System.Windows.Forms.AnchorStyles) ((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.buttonPartNo.Location = new System.Drawing.Point(304, 496);
+            this.buttonPartNo.Name = "buttonPartNo";
+            this.buttonPartNo.Size = new System.Drawing.Size(75, 23);
+            this.buttonPartNo.TabIndex = 9;
+            this.buttonPartNo.Text = " Part No Config";
+            this.buttonPartNo.UseVisualStyleBackColor = true;
+            this.buttonPartNo.Click += new System.EventHandler(this.buttonPartNo_Click);
+            // 
             // DataBrowserForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(916, 530);
+            this.Controls.Add(this.buttonPartNo);
             this.Controls.Add(this.buttonRestoreState);
             this.Controls.Add(this.buttonSaveState);
             this.Controls.Add(this.progressLabel);
@@ -357,6 +370,8 @@ namespace Bolsover.DataBrowser
             ((System.ComponentModel.ISupportInitialize) (this.treeListView)).EndInit();
             this.ResumeLayout(false);
         }
+
+        private System.Windows.Forms.Button buttonPartNo;
 
         private System.Windows.Forms.Button buttonSaveState;
         private System.Windows.Forms.Button buttonRestoreState;
