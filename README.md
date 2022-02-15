@@ -9,6 +9,8 @@ The project distribution does NOT include the required AlibreX.dll; you will nee
 
 The project is generally written using the Jetbrains Rider IDE but it should work equally well with Visual Studio 2022.
 
+![DataBrowserForAlibre](https://user-images.githubusercontent.com/32017426/154139069-68aa51e5-d517-46b6-9165-211df5f5c321.jpg)
+
 ## Selecting Alibre Parts and Assemblies for editing
 Selection of parts and assemblies is a simple matter of checking the relevant item/directory in the tree.
 Once items have been selected, the Alibre files are read and data is shown in the browser.
