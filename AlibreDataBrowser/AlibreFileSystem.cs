@@ -3,33 +3,40 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
-using System.Runtime.CompilerServices;
 using AlibreTests2.Annotations;
 using AlibreX;
-using BrightIdeasSoftware;
+
 
 namespace Bolsover.DataBrowser;
 
 public class AlibreFileSystem : IEquatable<AlibreFileSystem>, INotifyPropertyChanged
 {
     private bool _isChecked;
-   
+    private ArrayList children = new();
+
 
     public AlibreFileSystem(FileSystemInfo info)
     {
         Info = info;
+        RetrieveAlibreData();
+    }
+
+    public AlibreFileSystem()
+    {
+    }
+
+    public bool HasChildren()
+    {
+        return children.Count > 0;
     }
 
 
-    public FileSystemInfo Info { get; }
+    public FileSystemInfo Info { get; set; }
     public bool IsDirectory => AsDirectory != null;
     public DirectoryInfo AsDirectory => Info as DirectoryInfo;
     public FileInfo AsFile => Info as FileInfo;
-
     public string Name => Info.Name;
     public string FullName => Info.FullName;
-
-    public bool Exists { get; }
 
     public bool IsChecked
     {
@@ -37,9 +44,7 @@ public class AlibreFileSystem : IEquatable<AlibreFileSystem>, INotifyPropertyCha
         set => SetPropertyField("IsChecked", ref _isChecked, value);
     }
 
-
     public string AlibreDescription { get; set; }
-
     public ADUnits AlibreAngleDisplayUnits { get; set; }
     public double AlibreDensity { get; set; }
     public ADUnits AlibreLengthDisplayUnits { get; set; }
@@ -73,6 +78,12 @@ public class AlibreFileSystem : IEquatable<AlibreFileSystem>, INotifyPropertyCha
     public string AlibreVendor { get; set; }
     public string AlibreWebLink { get; set; }
 
+    public ArrayList Children
+    {
+        get => children;
+        set => children = value;
+    }
+
 
     public bool Equals(AlibreFileSystem other)
     {
@@ -81,53 +92,15 @@ public class AlibreFileSystem : IEquatable<AlibreFileSystem>, INotifyPropertyCha
         return Equals(other.Info.FullName, Info.FullName);
     }
 
-    public void Reset()
-    {
-        AlibreDescription = null;
-        AlibrePartNo = null;
-        AlibreMaterial = null;
-        AlibreExtMaterial = null;
-        // rowObject.AlibreAngleDisplayUnits = "";
-        // rowObject.AlibreDensity = designProperties.Density;
-        // rowObject.AlibreLengthDisplayUnits = designProperties.LengthDisplayUnits;
-        // rowObject.AlibreMassUnits = designProperties.MassUnits;
-        // rowObject.AlibreModelUnits = designProperties.ModelUnits;
-        AlibreComment = null;
-
-        AlibreCostCenter = null;
-        AlibreCreatedBy = null;
-        AlibreCreatedDate = null;
-        AlibreCreatingApplication = null;
-        AlibreDocumentNumber = null;
-        AlibreEngApprovalDate = null;
-        AlibreEngApprovedBy = null;
-        AlibreEstimatedCost = null;
-        AlibreKeywords = null;
-        AlibreLastAuthor = null;
-        AlibreLastUpdateDate = null;
-        AlibreMfgApprovedBy = null;
-        AlibreMfgApprovedDate = null;
-        AlibreModified = null;
-        AlibreProduct = null;
-        AlibreReceivedFrom = null;
-        AlibreRevision = null;
-        AlibreStockSize = null;
-        AlibreSupplier = null;
-        AlibreTitle = null;
-        AlibreVendor = null;
-        AlibreWebLink = null;
-    }
-
 
     /*
      * Retrieves data from the Alibre Session and populates the corresponding fields in the AlibreFileSystem rowObject
      */
     // [MethodImpl(MethodImplOptions.Synchronized)]
-    public AlibreFileSystem RetrieveAlibreData()
+    public void RetrieveAlibreData()
     {
         if (!IsDirectory
             && AsFile is {IsReadOnly: false}
-            // && AsFile.Extension != null
             && AsFile.Extension.StartsWith(".AD_P") |
             AsFile.Extension.StartsWith(".AD_A") |
             AsFile.Extension.StartsWith(".AD_S"))
@@ -202,8 +175,16 @@ public class AlibreFileSystem : IEquatable<AlibreFileSystem>, INotifyPropertyCha
 
             session.Close();
         }
-
-        return this;
+        else if (!IsDirectory
+                 && AsFile is {IsReadOnly: false}
+                 && AsFile.Extension.StartsWith(".AD_D"))
+        {
+            var session = AlibreConnector.RetrieveDrawingSessionForFile(this);
+            var designProperties = session.Properties;
+            AlibreDescription = designProperties.Description;
+            AlibrePartNo = designProperties.Number;
+            session.Close();
+        }
     }
 
     public override bool Equals(object obj)
@@ -229,18 +210,45 @@ public class AlibreFileSystem : IEquatable<AlibreFileSystem>, INotifyPropertyCha
         return !Equals(left, right);
     }
 
+
+    /// <summary>
+    /// Recursive method for walking component parts of an Alibre file
+    /// </summary>
+    /// <param name="alibreFileSystem"></param>
+    private void WalkAlibreData(AlibreFileSystem alibreFileSystem)
+    {
+        if (alibreFileSystem.Info.Extension.ToUpper().StartsWith(".AD_A")) // assemblies normally have components
+        {
+            var session = AlibreConnector.RetrieveSessionForFile(alibreFileSystem);
+            var collector = session.ConstituentFilePaths;
+            session.Close();
+            foreach (var s in collector)
+            {
+                var info = new FileInfo((string) s);
+                if (info.Exists)
+                {
+                    var child = new AlibreFileSystem();
+                    child.Info = info;
+                    child.RetrieveAlibreData();
+                    alibreFileSystem.Children.Add(child);
+                    WalkAlibreData(child);
+                }
+            }
+        }
+    }
+
     public IEnumerable GetFileSystemInfos()
     {
-        var children = new ArrayList();
         if (IsDirectory)
             foreach (var x in AsDirectory.GetFileSystemInfos())
             {
                 var alibreFileSystem = new AlibreFileSystem(x);
-                // alibreFileSystem.PropertyChanged += DataBrowserForm.HandleAlibreFileSystemPropertyChangedEvent;
-                children.Add(alibreFileSystem);
+
+                Children.Add(alibreFileSystem);
+                // WalkAlibreData(alibreFileSystem);
             }
 
-        return children;
+        return Children;
     }
 
     #region INotifyPropertyChanged Members

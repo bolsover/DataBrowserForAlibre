@@ -19,7 +19,6 @@ public partial class PartNoConfig : UserControl
         InitializeComponent();
         bindings();
         SetupToolTips();
-
     }
 
     public IList SelectedItems
@@ -28,17 +27,17 @@ public partial class PartNoConfig : UserControl
         set
         {
             selectedItems = value;
-            this.labelInfo.Text = "Info " + selectedItems.Count + " files to renumber.";
+            labelInfo.Text = "Info " + selectedItems.Count + " files to renumber.";
         }
     }
-    
+
     private void SetupToolTips()
     {
-        saveTooltip.SetToolTip(this.button2,
+        saveTooltip.SetToolTip(button2,
             "Saves the settings for the next part numbering session.");
-        applyTooltip.SetToolTip(this.button1,
+        applyTooltip.SetToolTip(button1,
             "Updates the selected files with the new part numbers.");
-        cancelTooltip.SetToolTip(this.buttonCancel,
+        cancelTooltip.SetToolTip(buttonCancel,
             "Cancels this dialog without updating files.");
     }
 
@@ -54,15 +53,13 @@ public partial class PartNoConfig : UserControl
     private void buttonCancel_Click(object sender, EventArgs e)
     {
         Hide();
-
     }
-    
+
     private void buttonSave_Click(object sender, EventArgs e)
     {
         PartNoManager.SaveConfig();
-
     }
-    
+
     private void buttonApply_Click(object sender, EventArgs e)
     {
         foreach (var oItem in selectedItems)
@@ -70,23 +67,41 @@ public partial class PartNoConfig : UserControl
             var fileSystem = (AlibreFileSystem) oItem;
 
             if (fileSystem.Info.Extension.ToUpper().StartsWith(".AD_P") |
-                fileSystem.Info.Extension.StartsWith(".AD_A") | fileSystem.Info.Extension.StartsWith(".AD_S"))
+                fileSystem.Info.Extension.ToUpper().StartsWith(".AD_A") |
+                fileSystem.Info.Extension.ToUpper().StartsWith(".AD_S"))
             {
-                this.labelInfo.Text = "Info updating " + fileSystem.Name;
+                labelInfo.Text = "Info updating " + fileSystem.Name;
                 var session = AlibreConnector.RetrieveSessionForFile(fileSystem);
-                fileSystem.AlibrePartNo = _partNoManager.PartNoSetting.Prefix + _partNoManager.PartNoSetting.PartNo +
+                fileSystem.AlibrePartNo = _partNoManager.PartNoSetting.Prefix +
+                                          _partNoManager.PartNoSetting.PartNo +
                                           _partNoManager.PartNoSetting.Suffix;
                 _partNoManager.PartNoSetting.PartNo += _partNoManager.PartNoSetting.SkipNo;
-                this.nextNumberSpinner.Value = _partNoManager.PartNoSetting.PartNo;
+                nextNumberSpinner.Value = _partNoManager.PartNoSetting.PartNo;
                 var designProperties = session.DesignProperties;
-                designProperties.Number = (string) fileSystem.AlibrePartNo;
+                designProperties.Number = fileSystem.AlibrePartNo;
                 session.Close(true);
             }
+            else if (fileSystem.Info.Extension.ToUpper().StartsWith(".AD_D"))
+            {
+                labelInfo.Text = "Info updating " + fileSystem.Name;
+                var session = AlibreConnector.RetrieveDrawingSessionForFile(fileSystem);
+                fileSystem.AlibrePartNo = _partNoManager.PartNoSetting.Prefix +
+                                          _partNoManager.PartNoSetting.PartNo +
+                                          _partNoManager.PartNoSetting.Suffix;
+                _partNoManager.PartNoSetting.PartNo += _partNoManager.PartNoSetting.SkipNo;
+                nextNumberSpinner.Value = _partNoManager.PartNoSetting.PartNo;
+                var designProperties = session.Properties;
+                designProperties.Number = fileSystem.AlibrePartNo;
+                session.Close(true);
+            }
+
             PartNoManager.SaveConfig();
         }
-        this.labelInfo.Text = "Info done updating";
+
+        labelInfo.Text = "Info done updating";
+        Hide();
     }
-    
+
     [Serializable()]
     public class PartNoSetting
     {
@@ -102,10 +117,7 @@ public partial class PartNoConfig : UserControl
             set
             {
                 prefix = value;
-               
                 InvokePropertyChanged(new PropertyChangedEventArgs("prefix"));
-                Example = prefix + partNo + suffix;
-                
             }
         }
 
@@ -117,12 +129,7 @@ public partial class PartNoConfig : UserControl
         {
             var handler = PropertyChanged;
             Example = prefix + partNo + suffix;
-            if (handler != null)
-            {
-                handler(this, e);
-                
-            }
-          
+            if (handler != null) handler(this, e);
         }
 
         #endregion
@@ -133,9 +140,7 @@ public partial class PartNoConfig : UserControl
             set
             {
                 suffix = value;
-                
                 InvokePropertyChanged(new PropertyChangedEventArgs("suffix"));
-                // Example = prefix + partNo + suffix;
             }
         }
 
@@ -145,9 +150,7 @@ public partial class PartNoConfig : UserControl
             set
             {
                 partNo = value;
-                
                 InvokePropertyChanged(new PropertyChangedEventArgs("partNo"));
-                // Example = prefix + partNo + suffix;
             }
         }
 
@@ -157,24 +160,18 @@ public partial class PartNoConfig : UserControl
             set
             {
                 skipNo = value;
-                
                 InvokePropertyChanged(new PropertyChangedEventArgs("skipNo"));
-                // Example = prefix + partNo + suffix;
             }
         }
 
         public string Example
         {
             get => prefix + partNo + suffix;
-            set
-            {
-                example = value; 
-              //  InvokePropertyChanged(new PropertyChangedEventArgs("example"));
-            }
+            set => example = value;
         }
     }
 
- private class PartNoManager
+    private class PartNoManager
     {
         private static PartNoSetting partNoSetting = new();
 
@@ -231,5 +228,4 @@ public partial class PartNoConfig : UserControl
             }
         }
     }
-  
 }

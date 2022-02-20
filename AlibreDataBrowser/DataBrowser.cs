@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -62,7 +61,7 @@ public partial class DataBrowserForm : Form
             "Saves column layout to file.");
         restoreStateTooltip.SetToolTip(buttonRestoreState,
             "Restores column layout from file.");
-       partNoTooltip.SetToolTip(this.buttonPartNo,
+        partNoTooltip.SetToolTip(buttonPartNo,
             "Opens the Part Numbering control.");
     }
 
@@ -352,18 +351,37 @@ public partial class DataBrowserForm : Form
         olvColumnAlibrePartNo.AspectPutter = (rowObject, value) =>
         {
             ((AlibreFileSystem) rowObject).AlibrePartNo = (string) value;
-            var session = AlibreConnector.RetrieveSessionForFile((AlibreFileSystem) rowObject);
-            var designProperties = session.DesignProperties;
-            designProperties.Number = (string) value;
+            if (((AlibreFileSystem) rowObject).Info.Extension.ToUpper().StartsWith(".AD_D"))
+            {
+                var session = AlibreConnector.RetrieveDrawingSessionForFile((AlibreFileSystem) rowObject);
+                var designProperties = session.Properties;
+                designProperties.Number = (string) value;
 
-            try
-            {
-                session.Close(true);
+                try
+                {
+                    session.Close(true);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
             }
-            catch (Exception e)
+            else
             {
-                Console.WriteLine(e);
-                throw;
+                var session = AlibreConnector.RetrieveSessionForFile((AlibreFileSystem) rowObject);
+                var designProperties = session.DesignProperties;
+                designProperties.Number = (string) value;
+
+                try
+                {
+                    session.Close(true);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
             }
         };
     }
@@ -377,18 +395,37 @@ public partial class DataBrowserForm : Form
         olvColumnAlibreDescription.AspectPutter = (rowObject, value) =>
         {
             ((AlibreFileSystem) rowObject).AlibreDescription = (string) value;
-            var session = AlibreConnector.RetrieveSessionForFile((AlibreFileSystem) rowObject);
-            var designProperties = session.DesignProperties;
-            designProperties.Description = (string) value;
+            if (((AlibreFileSystem) rowObject).Info.Extension.ToUpper().StartsWith(".AD_D"))
+            {
+                var session = AlibreConnector.RetrieveDrawingSessionForFile((AlibreFileSystem) rowObject);
+                var designProperties = session.Properties;
+                designProperties.Description = (string) value;
 
-            try
-            {
-                session.Close(true);
+                try
+                {
+                    session.Close(true);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
             }
-            catch (Exception e)
+            else
             {
-                Console.WriteLine(e);
-                throw;
+                var session = AlibreConnector.RetrieveSessionForFile((AlibreFileSystem) rowObject);
+                var designProperties = session.DesignProperties;
+                designProperties.Description = (string) value;
+
+                try
+                {
+                    session.Close(true);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
             }
         };
     }
@@ -403,7 +440,6 @@ public partial class DataBrowserForm : Form
         olvColumnType.AspectGetter = rowObject => ShellUtilities.GetFileType(((AlibreFileSystem) rowObject).FullName);
         olvColumnModified.AspectGetter = rowObject => ((AlibreFileSystem) rowObject).Info.LastWriteTime;
         olvColumnAlibreDescription.AspectGetter = rowObject => ((AlibreFileSystem) rowObject).AlibreDescription;
-
         olvColumnAlibrePartNo.AspectGetter = rowObject => ((AlibreFileSystem) rowObject).AlibrePartNo;
         olvColumnAlibreMaterial.AspectGetter = rowObject => ((AlibreFileSystem) rowObject).AlibreMaterial;
         //  olvColumnAlibreExtMaterial.AspectGetter = rowObject => ((AlibreFileSystem) rowObject).AlibreExtMaterial;
@@ -438,17 +474,17 @@ public partial class DataBrowserForm : Form
         // TreeListView require two delegates:
         // 1. CanExpandGetter - Can a particular model be expanded?
         // 2. ChildrenGetter - Once the CanExpandGetter returns true, ChildrenGetter should return the list of children
-        // CanExpandGetter is called very often! It must be very fast.
-        // treeListView.CanExpandGetter = rowObject => (((AlibreFileSystem) rowObject).IsDirectory | ((AlibreFileSystem) rowObject).FullName.EndsWith("AD_ASM")) ;
-        treeListView.CanExpandGetter = rowObject => ((AlibreFileSystem) rowObject).IsDirectory;
+        treeListView.CanExpandGetter = rowObject =>
+            ((AlibreFileSystem) rowObject).IsDirectory | ((AlibreFileSystem) rowObject).HasChildren();
         treeListView.ChildrenGetter = rowObject =>
         {
             try
             {
-                var children = ((AlibreFileSystem) rowObject).GetFileSystemInfos();
-                foreach (var child in children)
-                    ((AlibreFileSystem) child).PropertyChanged += HandleAlibreFileSystemPropertyChangedEvent;
-                return children;
+                if (((AlibreFileSystem) rowObject)
+                    .HasChildren()) // return existing children if this branch has already been indexed.
+                    return ((AlibreFileSystem) rowObject).Children;
+
+                return ((AlibreFileSystem) rowObject).GetFileSystemInfos();
             }
             catch (UnauthorizedAccessException ex)
             {
@@ -462,71 +498,20 @@ public partial class DataBrowserForm : Form
             if (di.IsReady)
             {
                 var alFileSystem = new AlibreFileSystem(new DirectoryInfo(di.Name));
-                alFileSystem.PropertyChanged += HandleAlibreFileSystemPropertyChangedEvent;
                 roots.Add(alFileSystem);
             }
 
         treeListView.Roots = roots;
-        treeListView.CheckedAspectName = "IsChecked";
-
-        // add handler for CellEditStarting
         treeListView.CellEditStarting += HandleCellEditStarting;
         treeListView.CellEditFinished += HandleCellEditFinished;
-    }
 
-    /*
-     * Handle AlibreFileSystem checked events
-     */
-    public void HandleAlibreFileSystemPropertyChangedEvent(object sender, PropertyChangedEventArgs args)
-    {
-        Debug.WriteLine(args.PropertyName);
-        if (args.PropertyName == "IsChecked" && ((AlibreFileSystem) sender).IsChecked)
-            try
-            {
-                var task = new Task(PrepareAction((AlibreFileSystem) sender), TaskCreationOptions.LongRunning);
-                var continuationTask = task.ContinueWith((antecedent) =>
-                {
-                    if (counter > 25)
-                    {
-                        treeListView.Refresh();
-                        lock (lockTarget)
-                        {
-                            counter = 0;
-                        }
-                    }
-                });
-
-                task.RunSynchronously(TaskScheduler.Current);
-                continuationTask.Wait();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex);
-            }
-        else
-            ((AlibreFileSystem) sender).Reset();
-    }
-
-    private object lockTarget = new();
-    private int counter = 0;
-
-
-    /*
-     * Returns the Action used to update the AlibreDate for a row.
-     */
-    private Action PrepareAction(AlibreFileSystem sender)
-    {
-        var action = () =>
-        {
-            progressLabel.Text = "Updating " + sender.Name;
-            sender.RetrieveAlibreData();
-            progressLabel.Text = "Completed ";
-            lock (lockTarget)
-            {
-                counter++;
-            }
-        };
-        return action;
+        // apply some style
+        var font = treeListView.Font;
+        var headerFont = new Font(font, FontStyle.Bold);
+        var style = new HeaderFormatStyle();
+        style.SetFont(headerFont);
+        style.SetForeColor(Color.Navy);
+        treeListView.HeaderFormatStyle = style;
     }
 
 
@@ -535,8 +520,6 @@ public partial class DataBrowserForm : Form
      */
     private void HandleCellEditFinished(object sender, CellEditEventArgs e)
     {
-        var rowObject = (AlibreFileSystem) e.RowObject;
-        var newvalue = e.NewValue;
         if (IsCopyToAllSelected) CopyToSelected(sender, e);
     }
 
@@ -568,14 +551,25 @@ public partial class DataBrowserForm : Form
             return;
         }
 
-        // prevent edits to anything other than sheet metal, part and assembly types
+        // prevent edits to anything other than sheet metal, part and assembly abd drawing types
         var extension = rowObject.Info.Extension.ToUpper();
-        if (!(rowObject.Info.Extension.StartsWith(".AD_P") | rowObject.Info.Extension.StartsWith(".AD_A") |
-              rowObject.Info.Extension.StartsWith(".AD_S")))
+        if (!(rowObject.Info.Extension.ToUpper().StartsWith(".AD_P") |
+              rowObject.Info.Extension.ToUpper().StartsWith(".AD_A") |
+              rowObject.Info.Extension.ToUpper().StartsWith(".AD_S") |
+              rowObject.Info.Extension.ToUpper().StartsWith(".AD_D")))
         {
             e.Cancel = true;
             return;
         }
+
+        // drawing can only edit description and part no fields
+        if (rowObject.Info.Extension.ToUpper().StartsWith(".AD_D"))
+            if (!(e.Column == olvColumnAlibreDescription || e.Column == olvColumnAlibrePartNo))
+            {
+                e.Cancel = true;
+                return;
+            }
+
 
         // olvColumnAlibreMaterial uses MaterialPicker other string based columns use default editor
         if (e.Column != olvColumnAlibreMaterial)
@@ -585,7 +579,8 @@ public partial class DataBrowserForm : Form
         }
         else
         {
-            if (!(rowObject.Info.Extension.StartsWith(".AD_P") | rowObject.Info.Extension.StartsWith(".AD_S")))
+            if (!(rowObject.Info.Extension.ToUpper().StartsWith(".AD_P") |
+                  rowObject.Info.Extension.ToUpper().StartsWith(".AD_S")))
             {
                 e.Cancel = true;
                 return;
@@ -629,8 +624,8 @@ public partial class DataBrowserForm : Form
         foreach (var checkedObject in checkedObjects)
         {
             var rowObject = (AlibreFileSystem) checkedObject;
-            if (e.Column == olvColumnAlibreMaterial && rowObject.Info.Extension.StartsWith(".AD_P") |
-                rowObject.Info.Extension.StartsWith(".AD_S"))
+            if (e.Column == olvColumnAlibreMaterial && rowObject.Info.Extension.ToUpper().StartsWith(".AD_P") |
+                rowObject.Info.Extension.ToUpper().StartsWith(".AD_S"))
             {
                 var afs = (AlibreFileSystem) e.RowObject;
                 var materialNode = new MaterialNode(afs.AlibreMaterial);
@@ -640,11 +635,12 @@ public partial class DataBrowserForm : Form
                 treeListView.Refresh();
             }
 
-
             else
             {
-                if (rowObject.Info.Extension.StartsWith(".AD_P") | rowObject.Info.Extension.StartsWith(".AD_A") |
-                    rowObject.Info.Extension.StartsWith(".AD_S"))
+                if (rowObject.Info.Extension.ToUpper().StartsWith(".AD_P") |
+                    rowObject.Info.Extension.ToUpper().StartsWith(".AD_A") |
+                    rowObject.Info.Extension.ToUpper().StartsWith(".AD_S") |
+                    rowObject.Info.Extension.ToUpper().StartsWith(".AD_D"))
                 {
                     progressLabel.Text = "Copy to " + rowObject.Name;
                     e.Column.AspectPutter.Invoke(rowObject, e.NewValue);
@@ -720,6 +716,9 @@ public partial class DataBrowserForm : Form
         File.WriteAllBytes(filepath, treeListViewViewState);
     }
 
+    /*
+     * Restores the treeListViewViewState from that previously saved to disk
+     */
     private void buttonRestoreState_Click(object sender, EventArgs e)
     {
         restoreState();
@@ -743,25 +742,32 @@ public partial class DataBrowserForm : Form
         }
     }
 
+    /*
+     * Activates part no control
+     */
     private void buttonPartNo_Click(object sender, EventArgs e)
     {
-        // PartNoConfiguration partNoConfiguration = new PartNoConfiguration(treeListView.CheckedObjects);
-        // partNoConfiguration.Show();
-
         partNoConfig.SelectedItems = treeListView.CheckedObjects;
         partNoConfig.Show();
-        
         partNoConfig.BringToFront();
     }
 
+    /*
+     * Reference point for moving part no control
+     */
     private Point MouseDownLocation;
 
-
+    /*
+     * Used for positioning of part no control
+     */
     private void partNoConfigMouseDown(object sender, MouseEventArgs e)
     {
         if (e.Button == MouseButtons.Left) MouseDownLocation = e.Location;
     }
 
+    /*
+     * Used for positioning of part no control
+     */
     private void partNoConfigMouseMove(object sender, MouseEventArgs e)
     {
         if (e.Button == MouseButtons.Left)

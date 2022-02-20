@@ -92,7 +92,6 @@ public partial class MaterialsBrowser : Form
 
     private void ConfigureAspectGetters()
     {
-        var helper = new SysImageListHelper(treeListView1);
         olvColumnName.AspectGetter = rowObject => ((MaterialNode) rowObject).NodeName;
     }
 

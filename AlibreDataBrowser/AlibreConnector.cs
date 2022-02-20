@@ -39,9 +39,22 @@ public class AlibreConnector
         return (IADDesignSession) root.OpenFile(alibreFileSystem.FullName);
     }
 
+
     [MethodImpl(MethodImplOptions.Synchronized)]
-    public static IADDesignSession OpenInAlibre(AlibreFileSystem alibreFileSystem)
+    public static IADDrawingSession RetrieveDrawingSessionForFile(AlibreFileSystem alibreFileSystem)
     {
-        return (IADDesignSession) root.OpenFileEx(alibreFileSystem.FullName, true);
+        return (IADDrawingSession) root.OpenFile(alibreFileSystem.FullName);
+    }
+
+    [MethodImpl(MethodImplOptions.Synchronized)]
+    public static IADDesignSession RetrieveSessionForFileName(string fullName)
+    {
+        return (IADDesignSession) root.OpenFile(fullName);
+    }
+
+    [MethodImpl(MethodImplOptions.Synchronized)]
+    public static IADAssemblySession RetrieveAssemblySessionForFile(AlibreFileSystem alibreFileSystem)
+    {
+        return (IADAssemblySession) root.OpenFile(alibreFileSystem.FullName);
     }
 }

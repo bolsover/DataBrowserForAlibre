@@ -112,8 +112,7 @@ namespace Bolsover.DataBrowser
             this.treeListView.CellEditActivation = BrightIdeasSoftware.ObjectListView.CellEditActivateMode.DoubleClick;
             this.treeListView.CellEditUseWholeCell = false;
             this.treeListView.CellVerticalAlignment = System.Drawing.StringAlignment.Near;
-            this.treeListView.CheckBoxes = true;
-            this.treeListView.CheckedAspectName = "";
+            this.treeListView.CheckedAspectName = "IsChecked";
             this.treeListView.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {this.olvColumnName, this.olvColumnType, this.olvColumnModified, this.olvColumnAlibreDescription, this.olvColumnAlibrePartNo, this.olvColumnAlibreMaterial, this.olvColumnAlibreComment, this.olvColumnAlibreLastUpdateDate, this.olvColumnAlibreLastAuthor, this.olvColumnAlibreKeywords, this.olvColumnAlibreEstimatedCost, this.olvColumnAlibreEngApprovedBy, this.olvColumnAlibreEngApprovalDate, this.olvColumnAlibreDocumentNumber, this.olvColumnAlibreCreatingApplication, this.olvColumnAlibreCreatedDate, this.olvColumnAlibreCreatedBy, this.olvColumnAlibreCostCenter, this.olvColumnAlibreMfgApprovedBy, this.olvColumnAlibreMfgApprovedDate, this.olvColumnAlibreModified, this.olvColumnAlibreProduct, this.olvColumnAlibreReceivedFrom, this.olvColumnAlibreRevision, this.olvColumnAlibreStockSize, this.olvColumnAlibreSupplier, this.olvColumnAlibreTitle, this.olvColumnAlibreVendor, this.olvColumnAlibreWebLink});
             this.treeListView.Cursor = System.Windows.Forms.Cursors.Default;
             this.treeListView.ForeColor = System.Drawing.SystemColors.WindowText;
