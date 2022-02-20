@@ -37,6 +37,13 @@ If the application crashes - it's most likely that the user is being over eager 
 
 Almost all of the Alibre design and extended design properties are availale for edit. Of the extended design properties only the Material property is not expoded for editing. I did this deliberately because changing the 'standard' Material design property will overwite any text entered in the extended property. This is a 'limitation' imposed by Alibre and while Alibre warns the user that the overwrite is about to take place, this software does NOT.
 
+## Version Comment
 
+The version comment is not currently available for display or editing; this is a restriction imposed by the AlibreX.dll which does not expose this property to the user.
+
+## Version 1.0.0.5
+Changed to the retrieval of Alibre data to occur when a directory is expanded rather than when a checkbox is selected. This makes the system more responsive. Additionally, Alibre data is no longer cleared when an item is deselected.
+Retrieval of Alibre data happens only once. If files are added to a directory already expanded, they will only show after application restart.
+Added facility to display and edit Alibre drawing description and part numbers.
 
 DB
